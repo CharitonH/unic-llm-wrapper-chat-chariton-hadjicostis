@@ -1,0 +1,199 @@
+/* Subscribe Newsletter */
+.newsletterContainer {
+    padding: 50px 10px 60px 10px !important;
+    border-bottom: 1px solid #fff;
+    margin-bottom: 50px;
+    color: #fff;
+    text-align: center;
+}
+
+.newsletterContainer h1 {
+    font-weight: 600;
+    font-size: 40px;
+}
+
+.newsletterContainer p {
+    font-size: 22px;
+}
+
+.form {
+    margin-top: 20px;
+}
+
+.subscribe {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.input {
+    width: 70%;
+    padding: 18px;
+    border: none;
+    border-radius: 10px 0px 0px 10px;
+    background: none;
+    color: white;
+    border: 1px solid white;
+}
+
+.input:focus {
+    outline: none;
+}
+
+.subscribeBtn {
+    border-radius: 0px 10px 10px 0px;
+    background-color: #E20001;
+    color: #fff;
+    border: none;
+    padding: 18px;
+    cursor: pointer;
+}
+
+.subscribeBtn:hover {
+    background-color: #c00000;
+}
+
+/* Footer */
+/* .footer {
+    padding: 10px 10px 20px 10px;
+    margin-top: 50px;
+    background-color: rgb(15, 15, 15);
+} */
+/* Footer */
+.footer {
+    background-color: rgb(15, 15, 15);
+    padding: 10px 10px 20px 10px;
+    color: white;
+    width: 100%;
+    position: relative;
+    bottom: 0;
+    margin-top: auto;
+}
+
+.footerLinks {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px 20px;
+}
+
+/* .logoSection {
+    flex: 1;
+    text-align: center;
+} */
+.logoSection {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+.logoContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px; /* Adjust spacing between logo and text */
+}
+
+.logo {
+    font-size: 30px;
+    font-weight: bolder;
+    color: white;
+}
+
+.logo:hover {
+    color: #E20001;
+}
+
+.logoSection p {
+    font-size: 16px;
+    color: #fff;
+    padding-bottom: 10px;
+}
+
+.socialIcons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.icon {
+    font-size: 24px;
+    color: white;
+    transition: color 0.3s ease;
+}
+
+.icon:hover {
+    color: #E20001;
+}
+
+/* Footer Links */
+.linkSection {
+    flex: 1;
+    min-width: 200px;
+    text-align: center;
+}
+
+.linkSection h4 {
+    font-size: 22px;
+    font-weight: 600;
+    color: #fff;
+    padding-bottom: 10px;
+}
+
+.linkSection ul {
+    list-style: none;
+    padding: 0;
+}
+
+.linkSection ul li {
+    margin-bottom: 10px;
+}
+
+.linkSection ul li a {
+    color: white;
+    text-decoration: none;
+}
+
+.linkSection ul li a:hover {
+    color: #E20001;
+}
+
+/* Footer Bottom */
+.copyright {
+    text-align: center;
+    padding: 15px 0;
+    background-color: #181818;
+    font-size: 0.9rem;
+    color: #aaa;
+    margin-top: 40px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .footerLinks {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .linkSection {
+        margin-top: 20px;
+    }
+
+    .subscribe {
+        flex-direction: column;
+    }
+
+    .input {
+        width: 100%;
+        border-radius: 10px;
+    }
+
+    .subscribeBtn {
+        width: 100%;
+        border-radius: 10px;
+        margin-top: 5px;
+    }
+}

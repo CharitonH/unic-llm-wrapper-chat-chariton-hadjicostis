@@ -1,0 +1,165 @@
+/* Base styles */
+.navbar {
+  background-color: #202020;
+  /* background-color: rgba(235, 235, 235, 0.5); */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  /* position: fixed; */
+  width: 100%;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  padding: 15px 0;
+}
+
+.container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 15px 20px;
+}
+
+/* Logo */
+.logo {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #333;
+  text-decoration: none;
+}
+
+/* Desktop Navigation */
+.navMenu {
+  display: flex;
+  list-style: none;
+  gap: 20px;
+  margin: 0 auto;
+}
+
+.navItem {
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #ffffff;
+  transition: color 0.3s ease-in-out;
+}
+.navItem:hover {
+  color: #cccccc;
+}
+
+/* Mobile Menu Button */
+.menuBtn {
+  display: none;
+  font-size: 1.8rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #333; /* Ensure it's visible */
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  z-index: 1100;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  vertical-align: middle;
+  /* margin-top: -5px; */
+}
+
+.avatarButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #008080; /* Teal color */
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+}
+
+.dropdown {
+    position: absolute;
+    right: 0;
+    margin-top: 10px;
+    background: white;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    width: 150px;
+    z-index: 10;
+}
+
+.dropdown ul {
+    list-style: none;
+    padding: 10px 0;
+}
+
+.dropdown li {
+    padding: 10px;
+    font-size: 14px;
+}
+.dropdown li:hover {
+    background-color: #f0f0f0;
+}
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+  .mobile-center {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+
+  .mobile-center div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* .icon {
+    margin: 0 auto;
+  } */
+  .menuBtn {
+    display: block;
+  }
+
+  .navMenu {
+    display: none;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background-color: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    padding-top: 80px;
+    z-index: 1000;
+  }
+
+  .navMenu.open {
+    display: flex;
+  }
+
+  .navItem {
+    padding: 15px 0;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #121212;
+  }
+
+  /* Ensure Close (X) Button is Visible */
+  .menuBtn {
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    z-index: 1100;
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "name": "llm-wrapper-chat-updated",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@huggingface/inference": "^3.1.6",
+    "@shadcn/ui": "^0.0.4",
+    "axios": "^1.7.9",
+    "cheerio": "^1.0.0",
+    "dompurify": "^3.2.4",
+    "dotenv": "^16.4.7",
+    "highlight.js": "^11.11.1",
+    "lucide-react": "^0.474.0",
+    "next": "^14.2.20",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-icons": "^5.4.0",
+    "react-markdown": "^9.0.3",
+    "react-quill": "^2.0.0",
+    "react-syntax-highlighter": "^15.6.1",
+    "remark-gfm": "^4.0.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.1.6",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  }
+}

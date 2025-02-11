@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #121212; /* Set dark background */
+  --foreground: #ffffff; /* Set light text */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #121212;
+    --foreground: #ededed;
+  }
+}
+
+body, html {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #121212 !important; /* Force dark background */
+  color: white !important; /* Ensure readable text */
+}
+
+#root, #__next {
+  height: 100%;
+  background-color: #121212 !important;
+}
+
+.ql-toolbar {
+  border: none !important; /* Remove toolbar border */
+  background-color: #121212 !important; /* Match dark theme */
+}
+
+.ql-container {
+  border: none !important; /* Remove editor border */
+  background-color: #121212 !important; /* Match dark theme */
+}
+
+.ql-editor {
+  color: white !important; /* Ensure text is visible */
+  min-height: 100px; /* Give space for typing */
+}
+
+.custom-quill .ql-toolbar {
+  border: none !important; /* Remove toolbar border */
+  background-color: #121212 !important; /* Dark theme */
+}
+
+.custom-quill .ql-editor {
+  color: white !important; /* Ensure text is visible */
+  font-size: 16px; /* Match chat text */
+}
+
+.custom-quill .ql-toolbar {
+  border: none !important; /* Remove toolbar border */
+  background-color: #121212 !important; /* Match background */
+}
+
+.custom-quill .ql-container {
+  border: none !important; /* Remove editor border */
+  background-color: #121212 !important; /* Match background */
+}
+
+.custom-quill .ql-editor {
+  color: white !important; /* Ensure text is visible */
+  font-size: 16px; /* Match chat text */
+  min-height: 80px; /* Keep height consistent */
+  padding: 10px; /* Adjust spacing */
+}
+
+
+
+
+
+/* Ensure message background is dark */
+.user-message {
+  background-color: #121212 !important;
+  color: white !important;
+  padding: 10px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Ensure the edit button has proper styling */
+.edit-button {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+/* Resize and color the pencil icon */
+.edit-button svg {
+  color: white; /* Ensure white icon */
+  width: 20px;
+  height: 20px;
+}
+
+/*Adjusting profile icon to place it to the very far right*/
+li#unic-user-profile {
+  right: 0 !important;
+  position: absolute !important;
+  margin-right: 25px !important;
+}
+
+/*Adjusting menu logo to place it to the very far left*/
+#unic-logo-menu {
+  left: 0 !important;
+  position: absolute !important;
+  margin-left: 15px !important;
+}
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+  li#unic-user-profile {
+    position: relative !important; /* Fix it for mobile */
+    bottom: 0 !important; /* Optional: Adjust as needed */
+    right: 0 !important;
+    margin-right: 0px !important; /* Adjust margin */
+  }
+}
