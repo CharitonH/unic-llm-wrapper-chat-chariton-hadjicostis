@@ -33,7 +33,7 @@ const Custom404: NextPage = () => {
             borderRadius: '5px',
           }}
         >
-          Go Back Home
+          Go Back Home!
         </a>
       </Link>
     </div>

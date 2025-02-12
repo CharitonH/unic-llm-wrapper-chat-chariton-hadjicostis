@@ -1,4 +1,3 @@
-// app/minimal/layout.tsx
 export default function MinimalLayout({
     children,
 }: {

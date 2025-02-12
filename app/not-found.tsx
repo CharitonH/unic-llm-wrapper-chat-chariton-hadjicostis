@@ -29,6 +29,6 @@
 import { redirect } from 'next/navigation';
 
 export default function NotFound() {
-  // Redirect to the minimal error page
+  // Redirect to the minimal error page.
   redirect('/minimal');
 }

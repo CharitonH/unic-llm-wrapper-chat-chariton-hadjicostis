@@ -1,4 +1,3 @@
-// app/minimal/page.tsx
 export default function Minimal404Page() {
     return (
       <div style={{ textAlign: 'center', padding: '2rem' }}>

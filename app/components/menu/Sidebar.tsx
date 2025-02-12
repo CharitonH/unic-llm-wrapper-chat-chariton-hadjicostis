@@ -121,7 +121,7 @@ export default function Sidebar({ className }: SidebarProps) {
         </div>
 
         {/* Second line of text - aligned properly below */}
-        <p className="text-xs text-gray-400">~145,000 words</p>
+        <p className="text-xs text-gray-400">~150,000 words</p>
 
         {/* Button Wrapper: Push it down but keep it inside */}
         <div className="absolute left-0 right-0 bottom-0">

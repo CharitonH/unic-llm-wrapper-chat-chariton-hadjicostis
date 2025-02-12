@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  // Determine if we are on a route that should use the minimal layout.
+  // Determine if we are on a route that should use the minimal layout,
   // In this example, any route starting with '/minimal' will have no menu, sidebar, or footer.
   // const isMinimalLayout = pathname.startsWith('/minimal');
   const isMinimalLayout = pathname?.startsWith('/minimal') ?? false;
