@@ -33,18 +33,32 @@ const Chat: React.FC = () => {
   const abortController = useRef<AbortController | null>(null);
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
+  // At the top of your file or inside the component:
+  const isValidWikipediaUrl = (url: string): boolean => {
+    try {
+      const parsedUrl = new URL(url);
+      // Require that the hostname ends with 'wikipedia.org'
+      return parsedUrl.hostname.toLowerCase().endsWith("wikipedia.org");
+    } catch (error) {
+      return false;
+    }
+  };
+
   // Auto-scroll to the latest message whenever messages update.
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [messages]);
-
+  
   // Trigger edit mode by loading the current message's content into the input field.
   const editMessage = (index: number, content: string) => {
     setInput(content);
     setEditIndex(index);
   };
+  
+  // Scroll the chat down when a message is sent
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
   // Update an edited message: append it as a new user message and send it to the API.
   const updateMessage = async () => {
@@ -105,7 +119,7 @@ const Chat: React.FC = () => {
       ]);
       return;
     }
-
+  
     // Sanitize and convert to plain text
     const sanitizedInput = DOMPurify.sanitize(input);
     const plainText = stripHtml(sanitizedInput).trim();
@@ -117,7 +131,7 @@ const Chat: React.FC = () => {
       setInput("");
       return;
     }
-
+  
     // Append the user's message (with formatting) to the conversation.
     setMessages((prev) => [
       ...prev,
@@ -126,44 +140,51 @@ const Chat: React.FC = () => {
     setInput("");
     setIsGenerating(true);
     abortController.current = new AbortController();
-
-    // Check for a scrape command.
-    const scrapeMatch = plainText.match(/\[include-url:\s*(https?:\/\/[^\s]+).*?\]/);
-    if (scrapeMatch) {
-      const urlToScrape = scrapeMatch[1];
-      try {
-        const res = await fetch("/api/scrape/scrape", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: urlToScrape }),
-        });
-        if (!res.ok) {
-          throw new Error(`HTTP error! Status: ${res.status}`);
+  
+    // Look for one or more scrape commands in the message.
+    const scrapeMatches = Array.from(
+      plainText.matchAll(/\[include-url:\s*(https?:\/\/[^\s]+).*?\]/g)
+    );
+  
+    if (scrapeMatches.length > 0) {
+      // Process each scrape command concurrently.
+      const scrapePromises = scrapeMatches.map(async (match) => {
+        const urlToScrape = match[1];
+        if (!isValidWikipediaUrl(urlToScrape)) {
+          return `⚠️ Invalid Wikipedia URL: ${urlToScrape}`;
         }
-        const data = await res.json();
-        if (data.error) {
-          setMessages((prev) => [
-            ...prev,
-            { role: "assistant", content: `⚠️ Scraping failed: ${data.error}` },
-          ]);
-        } else {
-          const scrapedText = `🔍 Scraped Content from ${urlToScrape}:\n\n${data.content}`;
-          setMessages((prev) => [
-            ...prev,
-            { role: "assistant", content: scrapedText },
-          ]);
+        try {
+          const res = await fetch("/api/scrape/scrape", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: urlToScrape }),
+          });
+          if (!res.ok) {
+            throw new Error(`HTTP error! Status: ${res.status}`);
+          }
+          const data = await res.json();
+          if (data.error) {
+            return `⚠️ Scraping failed for ${urlToScrape}: ${data.error}`;
+          } else {
+            return `🔍 Scraped Content from ${urlToScrape}:\n\n${data.content}`;
+          }
+        } catch (error: any) {
+          console.error(`❌ Scraping request failed for ${urlToScrape}:`, error);
+          return `⚠️ Failed to scrape ${urlToScrape}.`;
         }
-      } catch (error) {
-        console.error("❌ Scraping request failed:", error);
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: "⚠️ Failed to scrape the website." },
-        ]);
-      }
+      });
+  
+      // Wait for all scraping operations to complete.
+      const scrapedResults = await Promise.all(scrapePromises);
+      const combinedResult = scrapedResults.join("\n\n");
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: combinedResult },
+      ]);
       setIsGenerating(false);
       return;
     }
-
+  
     // Otherwise, send the plain text message to the AI API.
     try {
       const res = await fetch("/api/chat", {
@@ -189,6 +210,100 @@ const Chat: React.FC = () => {
     }
     setIsGenerating(false);
   };
+  
+  // const sendMessage = async () => {
+  //   // If the input is empty, have the assistant respond with "It looks like your message is empty. What can I help you with?"
+  //   if (!input) {
+  //     setMessages((prev) => [
+  //       ...prev,
+  //       { role: "assistant", content: "It looks like your message is empty. What can I help you with?" },
+  //     ]);
+  //     return;
+  //   }
+
+  //   // Sanitize and convert to plain text
+  //   const sanitizedInput = DOMPurify.sanitize(input);
+  //   const plainText = stripHtml(sanitizedInput).trim();
+  //   if (!plainText) {
+  //     setMessages((prev) => [
+  //       ...prev,
+  //       { role: "assistant", content: "It looks like your message is empty. What can I help you with?" },
+  //     ]);
+  //     setInput("");
+  //     return;
+  //   }
+
+  //   // Append the user's message (with formatting) to the conversation.
+  //   setMessages((prev) => [
+  //     ...prev,
+  //     { role: "user", content: sanitizedInput },
+  //   ]);
+  //   setInput("");
+  //   setIsGenerating(true);
+  //   abortController.current = new AbortController();
+
+  //   // Check for a scrape command.
+  //   const scrapeMatch = plainText.match(/\[include-url:\s*(https?:\/\/[^\s]+).*?\]/);
+  //   if (scrapeMatch) {
+  //     const urlToScrape = scrapeMatch[1];
+  //     try {
+  //       const res = await fetch("/api/scrape/scrape", {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({ url: urlToScrape }),
+  //       });
+  //       if (!res.ok) {
+  //         throw new Error(`HTTP error! Status: ${res.status}`);
+  //       }
+  //       const data = await res.json();
+  //       if (data.error) {
+  //         setMessages((prev) => [
+  //           ...prev,
+  //           { role: "assistant", content: `⚠️ Scraping failed: ${data.error}` },
+  //         ]);
+  //       } else {
+  //         const scrapedText = `🔍 Scraped Content from ${urlToScrape}:\n\n${data.content}`;
+  //         setMessages((prev) => [
+  //           ...prev,
+  //           { role: "assistant", content: scrapedText },
+  //         ]);
+  //       }
+  //     } catch (error) {
+  //       console.error("❌ Scraping request failed:", error);
+  //       setMessages((prev) => [
+  //         ...prev,
+  //         { role: "assistant", content: "⚠️ Failed to scrape the website." },
+  //       ]);
+  //     }
+  //     setIsGenerating(false);
+  //     return;
+  //   }
+
+  //   // Otherwise, send the plain text message to the AI API.
+  //   try {
+  //     const res = await fetch("/api/chat", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ message: plainText }),
+  //       signal: abortController.current.signal,
+  //     });
+  //     const data = await res.json();
+  //     setMessages((prev) => [
+  //       ...prev,
+  //       { role: "assistant", content: data.response },
+  //     ]);
+  //   } catch (error: any) {
+  //     if (error.name === "AbortError") {
+  //       setMessages((prev) => [
+  //         ...prev,
+  //         { role: "assistant", content: "Response stopped by user." },
+  //       ]);
+  //     } else {
+  //       console.error("Chat request failed:", error);
+  //     }
+  //   }
+  //   setIsGenerating(false);
+  // };
 
   const stopGenerating = () => {
     if (abortController.current) {
@@ -199,14 +314,23 @@ const Chat: React.FC = () => {
 
   // Handler for commands modal: generate a scrape command and insert it into the input.
   const handleScrapeCommand = () => {
-    if (!url.trim()) {
-      alert("Please enter a valid URL.");
+    if (!url.trim() || !isValidWikipediaUrl(url)) {
+      alert("Please enter a valid Wikipedia URL.");
       return;
     }
     const command = `[include-url: ${url} max_execution_time:${maxExecutionTime} filter:${filter} store:${store}]`;
     setInput((prev) => (prev ? `${prev} ${command}` : command));
     setIsCommandsOpen(false);
   };
+  // const handleScrapeCommand = () => {
+  //   if (!url.trim()) {
+  //     alert("Please enter a valid URL.");
+  //     return;
+  //   }
+  //   const command = `[include-url: ${url} max_execution_time:${maxExecutionTime} filter:${filter} store:${store}]`;
+  //   setInput((prev) => (prev ? `${prev} ${command}` : command));
+  //   setIsCommandsOpen(false);
+  // };
 
   return (
     <div className="w-full h-screen flex flex-col items-center justify-center bg-[#121212] text-white px-4">
