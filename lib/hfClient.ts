@@ -1,6 +1,6 @@
 import { HfInference } from "@huggingface/inference";
 
-const HF_TOKEN = process.env.NEXT_PUBLIC_HF_TOKEN || "";
+const HF_TOKEN = process.env.HUGGING_FACE_API_TOKEN || "";
 
 if (!HF_TOKEN) {
   throw new Error("Hugging Face API Token is missing! Add it to .env.local");
