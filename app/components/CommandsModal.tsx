@@ -1,4 +1,3 @@
-// CommandsModal.tsx
 "use client";
 
 import { X, ChevronDown } from "lucide-react";

@@ -32,7 +32,6 @@ export default function NavBar() {
 
           {/* User Dropdown */}
           <li id="unic-user-profile" className="relative flex items-center space-x-1 md:ml-auto md:mr-0 mobile-center" >
-            {/* style={{ right: 0, position: "absolute", marginRight: "20px !important" }} */}
             <div className="flex items-center md:space-x-1 w-full md:w-auto justify-center md:justify-start">
               {/* Smaller Avatar */}
               <button
