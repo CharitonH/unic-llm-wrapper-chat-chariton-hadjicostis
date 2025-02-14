@@ -109,9 +109,8 @@ const Chat: React.FC = () => {
     setIsGenerating(false);
   };
 
-  // Send a new message.
   const sendMessage = async () => {
-    // If the input is empty, have the assistant respond with "It looks like your message is empty. What can I help you with?"
+    // If the input is empty, have the assistant respond with a default message.
     if (!input) {
       setMessages((prev) => [
         ...prev,
@@ -120,7 +119,7 @@ const Chat: React.FC = () => {
       return;
     }
   
-    // Sanitize and convert to plain text
+    // Sanitize and convert to plain text.
     const sanitizedInput = DOMPurify.sanitize(input);
     const plainText = stripHtml(sanitizedInput).trim();
     if (!plainText) {
@@ -132,11 +131,14 @@ const Chat: React.FC = () => {
       return;
     }
   
-    // Append the user's message (with formatting) to the conversation.
-    setMessages((prev) => [
-      ...prev,
+    // Create an updated chat history including the new user message.
+    const updatedChatHistory = [
+      ...messages,
       { role: "user", content: sanitizedInput },
-    ]);
+    ];
+  
+    // Append the user's message (with formatting) to the conversation.
+    setMessages(updatedChatHistory);
     setInput("");
     setIsGenerating(true);
     abortController.current = new AbortController();
@@ -185,12 +187,16 @@ const Chat: React.FC = () => {
       return;
     }
   
-    // Otherwise, send the plain text message to the AI API.
+    // Limit the history to the last 10 messages before sending
+    const MAX_HISTORY = 10;
+    const recentHistory = updatedChatHistory.slice(-MAX_HISTORY);
+  
+    // Otherwise, send the plain text message along with the limited chat history to the AI API.
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: plainText }),
+        body: JSON.stringify({ message: plainText, chatHistory: recentHistory }),
         signal: abortController.current.signal,
       });
       const data = await res.json();
@@ -211,6 +217,120 @@ const Chat: React.FC = () => {
     setIsGenerating(false);
   };
   
+
+
+
+
+
+
+  // Send a message
+  // const sendMessage = async () => {
+  //   // If the input is empty, have the assistant respond with a default message.
+  //   if (!input) {
+  //     setMessages((prev) => [
+  //       ...prev,
+  //       { role: "assistant", content: "It looks like your message is empty. What can I help you with?" },
+  //     ]);
+  //     return;
+  //   }
+  
+  //   // Sanitize and convert to plain text.
+  //   const sanitizedInput = DOMPurify.sanitize(input);
+  //   const plainText = stripHtml(sanitizedInput).trim();
+  //   if (!plainText) {
+  //     setMessages((prev) => [
+  //       ...prev,
+  //       { role: "assistant", content: "It looks like your message is empty. What can I help you with?" },
+  //     ]);
+  //     setInput("");
+  //     return;
+  //   }
+  
+  //   // Create an updated chat history including the new user message.
+  //   const updatedChatHistory = [
+  //     ...messages,
+  //     { role: "user", content: sanitizedInput },
+  //   ];
+  
+  //   // Append the user's message (with formatting) to the conversation.
+  //   setMessages(updatedChatHistory);
+  //   setInput("");
+  //   setIsGenerating(true);
+  //   abortController.current = new AbortController();
+  
+  //   // Look for one or more scrape commands in the message.
+  //   const scrapeMatches = Array.from(
+  //     plainText.matchAll(/\[include-url:\s*(https?:\/\/[^\s]+).*?\]/g)
+  //   );
+  
+  //   if (scrapeMatches.length > 0) {
+  //     // Process each scrape command concurrently.
+  //     const scrapePromises = scrapeMatches.map(async (match) => {
+  //       const urlToScrape = match[1];
+  //       if (!isValidWikipediaUrl(urlToScrape)) {
+  //         return `⚠️ Invalid Wikipedia URL: ${urlToScrape}`;
+  //       }
+  //       try {
+  //         const res = await fetch("/api/scrape/scrape", {
+  //           method: "POST",
+  //           headers: { "Content-Type": "application/json" },
+  //           body: JSON.stringify({ url: urlToScrape }),
+  //         });
+  //         if (!res.ok) {
+  //           throw new Error(`HTTP error! Status: ${res.status}`);
+  //         }
+  //         const data = await res.json();
+  //         if (data.error) {
+  //           return `⚠️ Scraping failed for ${urlToScrape}: ${data.error}`;
+  //         } else {
+  //           return `🔍 Scraped Content from ${urlToScrape}:\n\n${data.content}`;
+  //         }
+  //       } catch (error: any) {
+  //         console.error(`❌ Scraping request failed for ${urlToScrape}:`, error);
+  //         return `⚠️ Failed to scrape ${urlToScrape}.`;
+  //       }
+  //     });
+  
+  //     // Wait for all scraping operations to complete.
+  //     const scrapedResults = await Promise.all(scrapePromises);
+  //     const combinedResult = scrapedResults.join("\n\n");
+  //     setMessages((prev) => [
+  //       ...prev,
+  //       { role: "assistant", content: combinedResult },
+  //     ]);
+  //     setIsGenerating(false);
+  //     return;
+  //   }
+  
+  //   // Otherwise, send the plain text message along with the full chat history to the AI API.
+  //   try {
+  //     const res = await fetch("/api/chat", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ message: plainText, chatHistory: updatedChatHistory }),
+  //       signal: abortController.current.signal,
+  //     });
+  //     const data = await res.json();
+  //     setMessages((prev) => [
+  //       ...prev,
+  //       { role: "assistant", content: data.response },
+  //     ]);
+  //   } catch (error: any) {
+  //     if (error.name === "AbortError") {
+  //       setMessages((prev) => [
+  //         ...prev,
+  //         { role: "assistant", content: "Response stopped by user." },
+  //       ]);
+  //     } else {
+  //       console.error("Chat request failed:", error);
+  //     }
+  //   }
+  //   setIsGenerating(false);
+  // };
+
+
+  // no chat history
+  // Send a new message.
   // const sendMessage = async () => {
   //   // If the input is empty, have the assistant respond with "It looks like your message is empty. What can I help you with?"
   //   if (!input) {
@@ -220,7 +340,7 @@ const Chat: React.FC = () => {
   //     ]);
   //     return;
   //   }
-
+  
   //   // Sanitize and convert to plain text
   //   const sanitizedInput = DOMPurify.sanitize(input);
   //   const plainText = stripHtml(sanitizedInput).trim();
@@ -232,7 +352,7 @@ const Chat: React.FC = () => {
   //     setInput("");
   //     return;
   //   }
-
+  
   //   // Append the user's message (with formatting) to the conversation.
   //   setMessages((prev) => [
   //     ...prev,
@@ -241,44 +361,51 @@ const Chat: React.FC = () => {
   //   setInput("");
   //   setIsGenerating(true);
   //   abortController.current = new AbortController();
-
-  //   // Check for a scrape command.
-  //   const scrapeMatch = plainText.match(/\[include-url:\s*(https?:\/\/[^\s]+).*?\]/);
-  //   if (scrapeMatch) {
-  //     const urlToScrape = scrapeMatch[1];
-  //     try {
-  //       const res = await fetch("/api/scrape/scrape", {
-  //         method: "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify({ url: urlToScrape }),
-  //       });
-  //       if (!res.ok) {
-  //         throw new Error(`HTTP error! Status: ${res.status}`);
+  
+  //   // Look for one or more scrape commands in the message.
+  //   const scrapeMatches = Array.from(
+  //     plainText.matchAll(/\[include-url:\s*(https?:\/\/[^\s]+).*?\]/g)
+  //   );
+  
+  //   if (scrapeMatches.length > 0) {
+  //     // Process each scrape command concurrently.
+  //     const scrapePromises = scrapeMatches.map(async (match) => {
+  //       const urlToScrape = match[1];
+  //       if (!isValidWikipediaUrl(urlToScrape)) {
+  //         return `⚠️ Invalid Wikipedia URL: ${urlToScrape}`;
   //       }
-  //       const data = await res.json();
-  //       if (data.error) {
-  //         setMessages((prev) => [
-  //           ...prev,
-  //           { role: "assistant", content: `⚠️ Scraping failed: ${data.error}` },
-  //         ]);
-  //       } else {
-  //         const scrapedText = `🔍 Scraped Content from ${urlToScrape}:\n\n${data.content}`;
-  //         setMessages((prev) => [
-  //           ...prev,
-  //           { role: "assistant", content: scrapedText },
-  //         ]);
+  //       try {
+  //         const res = await fetch("/api/scrape/scrape", {
+  //           method: "POST",
+  //           headers: { "Content-Type": "application/json" },
+  //           body: JSON.stringify({ url: urlToScrape }),
+  //         });
+  //         if (!res.ok) {
+  //           throw new Error(`HTTP error! Status: ${res.status}`);
+  //         }
+  //         const data = await res.json();
+  //         if (data.error) {
+  //           return `⚠️ Scraping failed for ${urlToScrape}: ${data.error}`;
+  //         } else {
+  //           return `🔍 Scraped Content from ${urlToScrape}:\n\n${data.content}`;
+  //         }
+  //       } catch (error: any) {
+  //         console.error(`❌ Scraping request failed for ${urlToScrape}:`, error);
+  //         return `⚠️ Failed to scrape ${urlToScrape}.`;
   //       }
-  //     } catch (error) {
-  //       console.error("❌ Scraping request failed:", error);
-  //       setMessages((prev) => [
-  //         ...prev,
-  //         { role: "assistant", content: "⚠️ Failed to scrape the website." },
-  //       ]);
-  //     }
+  //     });
+  
+  //     // Wait for all scraping operations to complete.
+  //     const scrapedResults = await Promise.all(scrapePromises);
+  //     const combinedResult = scrapedResults.join("\n\n");
+  //     setMessages((prev) => [
+  //       ...prev,
+  //       { role: "assistant", content: combinedResult },
+  //     ]);
   //     setIsGenerating(false);
   //     return;
   //   }
-
+  
   //   // Otherwise, send the plain text message to the AI API.
   //   try {
   //     const res = await fetch("/api/chat", {
