@@ -48,7 +48,7 @@ Using pnpm:
 ### 5. .env.local File
 - Create a file named .env.local in the root folder of the project
 - Insert your Huggingface token as:
-    - HF_TOKEN=YOUR_HUGGINGFACE_TOKEN
+    - HUGGING_FACE_API_TOKEN=YOUR_HUGGINGFACE_TOKEN
 
 ### Running the Application
 Run the server:
