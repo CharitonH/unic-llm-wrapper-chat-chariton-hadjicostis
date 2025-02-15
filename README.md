@@ -87,6 +87,7 @@ The app should now be accessible at `http://localhost:3000` (or another port if 
     - Test with Wikipedia URLs:
         - https://en.wikipedia.org/wiki/The_Lord_of_the_Rings
         - https://en.wikipedia.org/wiki/Large_language_model
+        - https://en.wikipedia.org/wiki/House
 - Click the "Scrape" button. A command will appear in the chat, formatted like this:
     *You can send multiple commands at the same time*
     - [include-url: https://en.wikipedia.org/wiki/The_Lord_of_the_Rings max_execution_time:300 filter:true store:true]
