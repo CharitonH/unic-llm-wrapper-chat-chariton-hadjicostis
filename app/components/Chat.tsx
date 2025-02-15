@@ -10,6 +10,7 @@ import CommandsModal from "./CommandsModal";
 import UnicLogo from "../../public/UNIC-logo.webp";
 import { Terminal, BookOpen, User, Plus } from "lucide-react";
 import { FiCircle } from "react-icons/fi";
+import { toast } from 'react-toastify';
 
 /**
  * Helper function to strip HTML tags from a string.
@@ -497,13 +498,26 @@ const Chat: React.FC = () => {
   // Handler for commands modal: generate a scrape command and insert it into the input.
   const handleScrapeCommand = () => {
     if (!url.trim() || !isValidWikipediaUrl(url)) {
-      alert("Please enter a valid Wikipedia URL.");
+      toast.error("Please enter a valid Wikipedia URL.");
       return;
     }
     const command = `[include-url: ${url} max_execution_time:${maxExecutionTime} filter:${filter} store:${store}]`;
     setInput((prev) => (prev ? `${prev} ${command}` : command));
     setIsCommandsOpen(false);
   };
+
+
+  // const handleScrapeCommand = () => {
+  //   if (!url.trim() || !isValidWikipediaUrl(url)) {
+  //     alert("Please enter a valid Wikipedia URL.");
+  //     return;
+  //   }
+  //   const command = `[include-url: ${url} max_execution_time:${maxExecutionTime} filter:${filter} store:${store}]`;
+  //   setInput((prev) => (prev ? `${prev} ${command}` : command));
+  //   setIsCommandsOpen(false);
+  // };
+
+  // original code
   // const handleScrapeCommand = () => {
   //   if (!url.trim()) {
   //     alert("Please enter a valid URL.");
