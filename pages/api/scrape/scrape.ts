@@ -86,6 +86,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log(`📝 Generated summary length: ${summary.length}`);
     return res.status(200).json({ summary });
   }
-
+  
   return res.status(200).json({ content: scrapedContent });
 }

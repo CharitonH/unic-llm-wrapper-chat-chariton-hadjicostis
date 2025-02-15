@@ -179,7 +179,8 @@ const Chat: React.FC = () => {
               let content = data.content;
               // Minimize the scraped content if it's too long.
               if (content && content.length > maxScrapeLength) {
-                content = content.substring(0, maxScrapeLength) + "...\n\n[Content truncated]";
+                // content = content.substring(0, maxScrapeLength) + "...\n\n[Content truncated]";
+                content = content.substring(0, maxScrapeLength) + "...\n\n";
               }
               return `🔍 Scraped Content for ${urlToScrape}:\n\n${content}`;
             }
