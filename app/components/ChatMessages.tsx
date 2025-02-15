@@ -91,6 +91,33 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
                   <div dangerouslySetInnerHTML={{ __html: msg.content }} />
                 ) : (
                   // Render AI responses as markdown so that code blocks are syntax highlighted.
+                  // <ReactMarkdown
+                  //   remarkPlugins={[remarkGfm]}
+                  //   components={{
+                  //     code({ node, className, children, ...props }) {
+                  //       const match = /language-(\w+)/.exec(className || "");
+                  //       return !className?.includes("inline") && match ? (
+                  //         <SyntaxHighlighter
+                  //           style={atomOneDark as Record<string, React.CSSProperties>}
+                  //           language={match[1] || "plaintext"}
+                  //           PreTag="div"
+                  //           {...(props as any)}
+                  //         >
+                  //           {String(children).replace(/\n$/, "")}
+                  //         </SyntaxHighlighter>
+                  //       ) : (
+                  //         <code
+                  //           className={`${className} bg-gray-800 px-1 py-0.5 rounded`}
+                  //           {...props}
+                  //         >
+                  //           {children}
+                  //         </code>
+                  //       );
+                  //     },
+                  //   }}
+                  // >
+                  //   {msg.content}
+                  // </ReactMarkdown>
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
