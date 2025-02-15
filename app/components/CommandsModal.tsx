@@ -59,9 +59,10 @@ const CommandsModal: React.FC<CommandsModalProps> = ({
             onClick={onScrape}
             className="bg-blue-600 px-4 py-2 rounded text-white"
           >
-            Scrape
+            Apply
           </button>
         </div>
+
         <div className="mt-4">
           <button
             className="flex justify-between items-center w-full p-2 bg-[#232323] text-white rounded border border-gray-600"

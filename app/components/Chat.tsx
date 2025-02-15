@@ -147,8 +147,62 @@ const Chat: React.FC = () => {
     const scrapeMatches = Array.from(
       plainText.matchAll(/\[include-url:\s*(https?:\/\/[^\s]+).*?\]/g)
     );
-  
+
+    // Minimized the scraped content because the LLM chat was lagging after printing so many words
     if (scrapeMatches.length > 0) {
+      // Determine if the command contains the word "summarize"
+      const shouldSummarize = plainText.toLowerCase().includes("summarize");
+      const maxScrapeLength = 2000; // Adjust the maximum length as needed
+
+      // Process each scrape command concurrently.
+      const scrapePromises = scrapeMatches.map(async (match) => {
+        const urlToScrape = match[1];
+        if (!isValidWikipediaUrl(urlToScrape)) {
+          return `⚠️ Invalid Wikipedia URL: ${urlToScrape}`;
+        }
+        try {
+          const res = await fetch("/api/scrape/scrape", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: urlToScrape, summarize: shouldSummarize }),
+          });
+          if (!res.ok) {
+            throw new Error(`HTTP error! Status: ${res.status}`);
+          }
+          const data = await res.json();
+          if (data.error) {
+            return `⚠️ ${shouldSummarize ? "Summarization" : "Scraping"} failed for ${urlToScrape}: ${data.error}`;
+          } else {
+            if (shouldSummarize) {
+              return `🔍 Summary for ${urlToScrape}:\n\n${data.summary}`;
+            } else {
+              let content = data.content;
+              // Minimize the scraped content if it's too long.
+              if (content && content.length > maxScrapeLength) {
+                content = content.substring(0, maxScrapeLength) + "...\n\n[Content truncated]";
+              }
+              return `🔍 Scraped Content for ${urlToScrape}:\n\n${content}`;
+            }
+          }
+        } catch (error: any) {
+          console.error(`❌ ${shouldSummarize ? "Summarization" : "Scraping"} request failed for ${urlToScrape}:`, error);
+          return `⚠️ Failed to ${shouldSummarize ? "summarize" : "scrape"} ${urlToScrape}.`;
+        }
+      });
+
+      // Wait for all operations to complete.
+      const results = await Promise.all(scrapePromises);
+      const combinedResult = results.join("\n\n");
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: combinedResult },
+      ]);
+      setIsGenerating(false);
+      return;
+    }
+
+    // original code
+    /*if (scrapeMatches.length > 0) {
       // Process each scrape command concurrently.
       const scrapePromises = scrapeMatches.map(async (match) => {
         const urlToScrape = match[1];
@@ -185,7 +239,7 @@ const Chat: React.FC = () => {
       ]);
       setIsGenerating(false);
       return;
-    }
+    }*/
   
     // Limit the history to the last 10 messages before sending
     const MAX_HISTORY = 10;

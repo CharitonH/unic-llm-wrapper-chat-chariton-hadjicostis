@@ -36,12 +36,34 @@ async function scrapeWebsite(url: string) {
   }
 }
 
+// export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+//   if (req.method !== "POST") {
+//     return res.status(405).json({ error: "Method Not Allowed" });
+//   }
+
+//   const { url } = req.body;
+
+//   if (!url || typeof url !== "string") {
+//     return res.status(400).json({ error: "Invalid URL provided" });
+//   }
+
+//   console.log("🚀 Scraping request received for:", url);
+
+//   const scrapedContent = await scrapeWebsite(url);
+  
+//   if (!scrapedContent) {
+//     return res.status(500).json({ error: "Failed to scrape website. The site may block bots." });
+//   }
+
+//   return res.status(200).json({ content: scrapedContent });
+// }
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  const { url } = req.body;
+  const { url, summarize } = req.body; // <-- Note the new "summarize" parameter
 
   if (!url || typeof url !== "string") {
     return res.status(400).json({ error: "Invalid URL provided" });
@@ -53,6 +75,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   
   if (!scrapedContent) {
     return res.status(500).json({ error: "Failed to scrape website. The site may block bots." });
+  }
+
+  // If summarization is requested, generate a summary.
+  if (summarize) {
+    // Simple summarization: take the first 5 sentences.
+    const sentences = scrapedContent.split(/(?<=[.?!])\s+/);
+    const numSentences = Math.min(5, sentences.length);
+    const summary = sentences.slice(0, numSentences).join(" ");
+    console.log(`📝 Generated summary length: ${summary.length}`);
+    return res.status(200).json({ summary });
   }
 
   return res.status(200).json({ content: scrapedContent });
