@@ -74,7 +74,7 @@ export default function Sidebar({ className }: SidebarProps) {
           <FiClock size={20} /> {!hideText && <span>Chat History</span>}
         </div>
         {/* Two buttons matching the sidebar's look */}
-        <div className="flex flex-col gap-2 mt-2">
+        {/* <div className="flex flex-col gap-2 mt-2">
           <button
             className={`w-full bg-[#232323] py-2 ${
               hideText ? "px-2 text-center text-xs" : "px-4 text-left"
@@ -89,7 +89,7 @@ export default function Sidebar({ className }: SidebarProps) {
           >
             {hideText ? "ChatGPT" : "What is ChatGPT?"}
           </button>
-        </div>
+        </div> */}
 
         {/* Library Section - Toggleable */}
         <div className="flex flex-col text-gray-300">
