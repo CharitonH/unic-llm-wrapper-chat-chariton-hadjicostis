@@ -18,11 +18,11 @@ const Greeting: React.FC = () => {
     } else if (hour >= 15 && hour < 18) {
       setGreeting("Good Afternoon!");
       setIcon(<SunMedium size={20} className="text-orange-400" />);
-    } else if (hour >= 18 && hour < 22) {
+    } else if (hour >= 18 && hour < 24) {
       setGreeting("Good Evening!");
       setIcon(<Moon size={20} className="text-gray-300" />);
     } else {
-      setGreeting("Good Night!");
+      setGreeting("Hey, still up!");
       setIcon(<Moon size={20} className="text-blue-400" />);
     }
   }, []);
