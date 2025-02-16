@@ -33,9 +33,10 @@ const CommandsModal: React.FC<CommandsModalProps> = ({
   store,
   setStore,
 }) => {
-  if (!isCommandsOpen) return null;
 
-  return (
+if (!isCommandsOpen) return null;
+
+return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex justify-center items-center">
       <div className="bg-[#1a1a1a] p-6 rounded-lg shadow-lg border border-gray-700 w-96">
         <div className="flex justify-between items-center mb-4">
@@ -57,7 +58,7 @@ const CommandsModal: React.FC<CommandsModalProps> = ({
           />
           <button
             onClick={onScrape}
-            className="bg-blue-600 px-4 py-2 rounded text-white"
+            className="bg-[#bb1d2c] px-4 py-2 rounded text-white"
           >
             Apply
           </button>

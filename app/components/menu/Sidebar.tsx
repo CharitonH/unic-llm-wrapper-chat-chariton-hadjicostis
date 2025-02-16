@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { FiClock, FiFolder, FiTrash2, FiGrid, FiDatabase, FiChevronDown, FiCircle } from "react-icons/fi";
+import { Plus } from "lucide-react";
 
 interface SidebarProps {
   className?: string;
@@ -54,18 +55,40 @@ export default function Sidebar({ className }: SidebarProps) {
 
         {/* New Chat Button */}
         <button
-          className={`mt-2 bg-[#2BC5C1] w-full py-2 rounded-lg text-black flex items-center justify-center gap-2 transition-opacity duration-300 ${
+          className={`mt-2 bg-[#bb1d2c] w-full py-2 rounded-lg text-white flex items-center justify-center gap-2 transition-opacity duration-300 ${
             hideText ? "opacity-0" : "opacity-100"
           }`}
         >
-          {!hideText && "+ New Chat"}
+          {!hideText && (
+            <>
+              <Plus size={16} /> New Chat
+            </>
+          )}
         </button>
       </div>
 
       {/* Main Menu - Pushed Down to Avoid Overlap */}
-      <div className="mt-24 flex flex-col gap-4">
+      <div className="mt-20 flex flex-col gap-4">
+        {/* Recents Section */}
         <div className="flex items-center gap-2 text-gray-300">
-          <FiClock size={20} /> {!hideText && <span>Recents</span>}
+          <FiClock size={20} /> {!hideText && <span>Chat History</span>}
+        </div>
+        {/* Two buttons matching the sidebar's look */}
+        <div className="flex flex-col gap-2 mt-2">
+          <button
+            className={`w-full bg-[#232323] py-2 ${
+              hideText ? "px-2 text-center text-xs" : "px-4 text-left"
+            } rounded hover:bg-[#1a1a1a] text-gray-300`}
+          >
+            {hideText ? "Basics" : "How to basics?"}
+          </button>
+          <button
+            className={`w-full bg-[#232323] py-2 ${
+              hideText ? "px-2 text-center text-xs" : "px-4 text-left"
+            } rounded hover:bg-[#1a1a1a] text-gray-300`}
+          >
+            {hideText ? "ChatGPT" : "What is ChatGPT?"}
+          </button>
         </div>
 
         {/* Library Section - Toggleable */}
