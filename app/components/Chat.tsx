@@ -121,7 +121,7 @@ const Chat: React.FC = () => {
 
 
   // Send a message
-  /*const sendMessage = async () => {
+const sendMessage = async () => {
   // If the input is empty, have the assistant respond with a default message.
   if (!input) {
     setMessages((prev) => [
@@ -149,7 +149,7 @@ const Chat: React.FC = () => {
     { role: "user", content: sanitizedInput },
   ];
 
-  // Append the user's message to the conversation.
+  // Append the user's message (with formatting) to the conversation.
   setMessages(updatedChatHistory);
   setInput("");
   setIsGenerating(true);
@@ -160,11 +160,13 @@ const Chat: React.FC = () => {
     plainText.matchAll(/\[include-url:\s*(https?:\/\/[^\s]+).*?\]/g)
   );
 
-  // If scrape commands are found, process them as before.
+  // Minimized the scraped content because the LLM chat was lagging after printing so many words
   if (scrapeMatches.length > 0) {
+    // Determine if the command contains the word "summarize"
     const shouldSummarize = plainText.toLowerCase().includes("summarize");
-    const maxScrapeLength = 2000; // Adjust as needed
+    const maxScrapeLength = 2000; // Adjust the maximum length as needed
 
+    // Process each scrape command concurrently.
     const scrapePromises = scrapeMatches.map(async (match) => {
       const urlToScrape = match[1];
       if (!isValidWikipediaUrl(urlToScrape)) {
@@ -187,6 +189,7 @@ const Chat: React.FC = () => {
             return `🔍 Summary for ${urlToScrape}:\n\n${data.summary}`;
           } else {
             let content = data.content;
+            // Post-process the scraped content to ensure it ends with a complete sentence.
             if (content) {
               let sentences = content.split(/(?<=[.?!])\s+/);
               if (sentences.length > 1 && !/[.?!]$/.test(sentences[sentences.length - 1].trim())) {
@@ -198,6 +201,7 @@ const Chat: React.FC = () => {
               }
             }
             if (content && content.length > maxScrapeLength) {
+              // Try to extend the content past maxScrapeLength until the next period
               const afterLimit = content.substring(maxScrapeLength);
               const nextPeriodIndex = afterLimit.indexOf(".");
               if (nextPeriodIndex !== -1) {
@@ -221,6 +225,7 @@ const Chat: React.FC = () => {
       }
     });
 
+    // Wait for all operations to complete.
     const results = await Promise.all(scrapePromises);
     const combinedResult = results.join("\n\n");
     setMessages((prev) => [
@@ -231,37 +236,71 @@ const Chat: React.FC = () => {
     return;
   }
 
-  // For normal messages, use streaming.
+  // Limit the history to the last 10 messages before sending.
   const MAX_HISTORY = 10;
   const recentHistory = updatedChatHistory.slice(-MAX_HISTORY);
 
+  // Construct the prompt – using only the latest query.
+  // const fullPrompt = `You are a helpful AI assistant. Provide a concise answer to the following question without including any conversation labels.\n\nQuestion: ${plainText}\nAnswer: `;
+
+  //const fullPrompt = `${plainText}`;
+  const fullPrompt = `Provide a short and factual answer to this question. Do not generate any follow-up responses:\n\n${sanitizedInput}`;
+
+
+  // Otherwise, send the plain text message along with the limited chat history to the AI API.
   try {
-    const res = await fetch("/api/chat/route", {
+    const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: plainText, chatHistory: recentHistory }),
+      body: JSON.stringify({ message: fullPrompt, chatHistory: recentHistory }),
       signal: abortController.current.signal,
     });
-    if (!res.body) throw new Error("No response body");
 
+    if (!res.body) {
+      throw new Error("No response body");
+    }
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
-    let accumulated = "";
+    let done = false;
+    let accumulatedResponse = ""; // Holds the complete text received so far
 
-    // Read and decode stream chunks.
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      accumulated += decoder.decode(value, { stream: true });
-      setMessages((prev) => {
-        const last = prev[prev.length - 1];
-        if (last && last.role === "assistant") {
-          return [...prev.slice(0, -1), { role: "assistant", content: accumulated }];
-        } else {
-          return [...prev, { role: "assistant", content: accumulated }];
-        }
-      });
+    // Placeholder for streaming message
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+    while (!done) {
+      const { value, done: doneReading } = await reader.read();
+      done = doneReading;
+      if (value) {
+        // Decode the new chunk and update progressively
+        const newChunk = decoder.decode(value, { stream: true });
+        accumulatedResponse += newChunk;
+
+        // Append instead of replacing the whole response
+        setMessages((prev) => {
+          const updatedMessages = [...prev];
+          const lastMessageIndex = updatedMessages.length - 1;
+          updatedMessages[lastMessageIndex] = {
+            role: "assistant",
+            content: accumulatedResponse,
+          };
+          return updatedMessages;
+        });
+
+        // Pause briefly to allow UI updates.
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
     }
+
+    // Final update: replace the temporary message with the complete response.
+    setMessages((prev) => {
+      const updatedMessages = [...prev];
+      const lastMessageIndex = updatedMessages.length - 1;
+      updatedMessages[lastMessageIndex] = {
+        role: "assistant",
+        content: accumulatedResponse,
+      };
+      return updatedMessages;
+    });
   } catch (error: any) {
     if (error.name === "AbortError") {
       setMessages((prev) => [
@@ -270,14 +309,10 @@ const Chat: React.FC = () => {
       ]);
     } else {
       console.error("Chat request failed:", error);
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "Error streaming response." },
-      ]);
     }
   }
   setIsGenerating(false);
-};*/
+};
 
 
 
@@ -290,7 +325,10 @@ const Chat: React.FC = () => {
 
 
 
-  const sendMessage = async () => {
+
+
+
+  /*const sendMessage = async () => {
     // If the input is empty, have the assistant respond with a default message.
     if (!input) {
       setMessages((prev) => [
@@ -442,7 +480,7 @@ const Chat: React.FC = () => {
       }
     }
     setIsGenerating(false);
-  };
+  };*/
 
 
 
