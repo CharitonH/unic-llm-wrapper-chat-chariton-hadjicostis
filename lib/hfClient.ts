@@ -1,5 +1,20 @@
-// INCLUDE STREAMING
+// WORKING UPDATED - INCLUDES STREAMING AND CHAT HISTORY
 import { HfInference } from "@huggingface/inference";
+
+// Define these yourself (in hfClient.ts or a separate file)
+export interface ChatCompletionRequestMessage {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
+
+export interface ChatCompletionStreamResponse {
+  choices?: Array<{
+    delta?: {
+      role?: string;
+      content?: string;
+    };
+  }>;
+}
 
 const HF_TOKEN = process.env.HUGGING_FACE_API_TOKEN || "";
 if (!HF_TOKEN) {
@@ -8,78 +23,20 @@ if (!HF_TOKEN) {
 
 export const hfClient = new HfInference(HF_TOKEN);
 
-export async function* getChatCompletionStream(prompt: string) {
-  const response = await fetch(
-    "https://api-inference.huggingface.co/models/microsoft/Phi-3-mini-4k-instruct",
-    {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${HF_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        inputs: prompt,
-        parameters: {
-          max_tokens: 100, // Allow a bit more room for the answer.
-          // No stop parameter.
-        },
-        stream: true,
-      }),
-    }
-  );
-
-  if (!response.body) {
-    throw new Error("No response body received from Hugging Face API");
-  }
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    // Decode the chunk and split into lines.
-    const chunk = decoder.decode(value, { stream: true });
-    const lines = chunk.split("\n");
-
-    for (const line of lines) {
-      if (line.startsWith("data: ")) {
-        const jsonStr = line.slice(6).trim();
-        if (jsonStr === "[DONE]") {
-          return;
-        }
-        if (!jsonStr) continue;
-        try {
-          const parsed = JSON.parse(jsonStr);
-          if (parsed?.token?.text) {
-            yield parsed.token.text;
-          }
-        } catch (error) {
-          console.error("Error parsing chunk:", error);
-          continue;
-        }
-      }
-    }
-  }
+// This function returns an async iterator (a "stream") of ChatCompletionStreamResponse chunks
+export function getChatCompletionStream(messages: ChatCompletionRequestMessage[]) {
+  return hfClient.chatCompletionStream({
+    model: "microsoft/Phi-3-mini-4k-instruct",
+    messages,
+    provider: "hf-inference",
+    max_tokens: 500,
+  });
 }
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+// OLD CODE - WORKING
 // import { HfInference } from "@huggingface/inference";
 
 // const HF_TOKEN = process.env.HUGGING_FACE_API_TOKEN || "";

@@ -120,199 +120,194 @@ const Chat: React.FC = () => {
   
 
 
-  // Send a message
-const sendMessage = async () => {
-  // If the input is empty, have the assistant respond with a default message.
-  if (!input) {
-    setMessages((prev) => [
-      ...prev,
-      { role: "assistant", content: "It looks like your message is empty. What can I help you with?" },
-    ]);
-    return;
-  }
-
-  // Sanitize and convert to plain text.
-  const sanitizedInput = DOMPurify.sanitize(input);
-  const plainText = stripHtml(sanitizedInput).trim();
-  if (!plainText) {
-    setMessages((prev) => [
-      ...prev,
-      { role: "assistant", content: "It looks like your message is empty. What can I help you with?" },
-    ]);
-    setInput("");
-    return;
-  }
-
-  // Create an updated chat history including the new user message.
-  const updatedChatHistory = [
-    ...messages,
-    { role: "user", content: sanitizedInput },
-  ];
-
-  // Append the user's message (with formatting) to the conversation.
-  setMessages(updatedChatHistory);
-  setInput("");
-  setIsGenerating(true);
-  abortController.current = new AbortController();
-
-  // Look for one or more scrape commands in the message.
-  const scrapeMatches = Array.from(
-    plainText.matchAll(/\[include-url:\s*(https?:\/\/[^\s]+).*?\]/g)
-  );
-
-  // Minimized the scraped content because the LLM chat was lagging after printing so many words
-  if (scrapeMatches.length > 0) {
-    // Determine if the command contains the word "summarize"
-    const shouldSummarize = plainText.toLowerCase().includes("summarize");
-    const maxScrapeLength = 2000; // Adjust the maximum length as needed
-
-    // Process each scrape command concurrently.
-    const scrapePromises = scrapeMatches.map(async (match) => {
-      const urlToScrape = match[1];
-      if (!isValidWikipediaUrl(urlToScrape)) {
-        return `⚠️ Invalid Wikipedia URL: ${urlToScrape}`;
-      }
-      try {
-        const res = await fetch("/api/scrape/scrape", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: urlToScrape, summarize: shouldSummarize }),
-        });
-        if (!res.ok) {
-          throw new Error(`HTTP error! Status: ${res.status}`);
-        }
-        const data = await res.json();
-        if (data.error) {
-          return `⚠️ ${shouldSummarize ? "Summarization" : "Scraping"} failed for ${urlToScrape}: ${data.error}`;
-        } else {
-          if (shouldSummarize) {
-            return `🔍 Summary for ${urlToScrape}:\n\n${data.summary}`;
-          } else {
-            let content = data.content;
-            // Post-process the scraped content to ensure it ends with a complete sentence.
-            if (content) {
-              let sentences = content.split(/(?<=[.?!])\s+/);
-              if (sentences.length > 1 && !/[.?!]$/.test(sentences[sentences.length - 1].trim())) {
-                sentences.pop();
-              }
-              content = sentences.join(" ").trim();
-              if (!/[.?!]$/.test(content)) {
-                content = content + ".";
-              }
-            }
-            if (content && content.length > maxScrapeLength) {
-              // Try to extend the content past maxScrapeLength until the next period
-              const afterLimit = content.substring(maxScrapeLength);
-              const nextPeriodIndex = afterLimit.indexOf(".");
-              if (nextPeriodIndex !== -1) {
-                content = content.substring(0, maxScrapeLength + nextPeriodIndex + 1) + "\n\n";
-              } else {
-                let truncated = content.substring(0, maxScrapeLength);
-                const lastPeriod = truncated.lastIndexOf(".");
-                if (lastPeriod !== -1) {
-                  content = truncated.substring(0, lastPeriod + 1) + "\n\n";
-                } else {
-                  content = truncated + "\n\n";
-                }
-              }
-            }
-            return `🔍 Scraped Content for ${urlToScrape}:\n\n${content}`;
-          }
-        }
-      } catch (error: any) {
-        console.error(`❌ ${shouldSummarize ? "Summarization" : "Scraping"} request failed for ${urlToScrape}:`, error);
-        return `⚠️ Failed to ${shouldSummarize ? "summarize" : "scrape"} ${urlToScrape}.`;
-      }
-    });
-
-    // Wait for all operations to complete.
-    const results = await Promise.all(scrapePromises);
-    const combinedResult = results.join("\n\n");
-    setMessages((prev) => [
-      ...prev,
-      { role: "assistant", content: combinedResult },
-    ]);
-    setIsGenerating(false);
-    return;
-  }
-
-  // Limit the history to the last 10 messages before sending.
-  const MAX_HISTORY = 10;
-  const recentHistory = updatedChatHistory.slice(-MAX_HISTORY);
-
-  // Construct the prompt – using only the latest query.
-  // const fullPrompt = `You are a helpful AI assistant. Provide a concise answer to the following question without including any conversation labels.\n\nQuestion: ${plainText}\nAnswer: `;
-
-  //const fullPrompt = `${plainText}`;
-  const fullPrompt = `Provide a short and factual answer to this question. Do not generate any follow-up responses:\n\n${sanitizedInput}`;
-
-
-  // Otherwise, send the plain text message along with the limited chat history to the AI API.
-  try {
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: fullPrompt, chatHistory: recentHistory }),
-      signal: abortController.current.signal,
-    });
-
-    if (!res.body) {
-      throw new Error("No response body");
-    }
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let done = false;
-    let accumulatedResponse = ""; // Holds the complete text received so far
-
-    // Placeholder for streaming message
-    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
-
-    while (!done) {
-      const { value, done: doneReading } = await reader.read();
-      done = doneReading;
-      if (value) {
-        // Decode the new chunk and update progressively
-        const newChunk = decoder.decode(value, { stream: true });
-        accumulatedResponse += newChunk;
-
-        // Append instead of replacing the whole response
-        setMessages((prev) => {
-          const updatedMessages = [...prev];
-          const lastMessageIndex = updatedMessages.length - 1;
-          updatedMessages[lastMessageIndex] = {
-            role: "assistant",
-            content: accumulatedResponse,
-          };
-          return updatedMessages;
-        });
-
-        // Pause briefly to allow UI updates.
-        await new Promise((resolve) => setTimeout(resolve, 50));
-      }
-    }
-
-    // Final update: replace the temporary message with the complete response.
-    setMessages((prev) => {
-      const updatedMessages = [...prev];
-      const lastMessageIndex = updatedMessages.length - 1;
-      updatedMessages[lastMessageIndex] = {
-        role: "assistant",
-        content: accumulatedResponse,
-      };
-      return updatedMessages;
-    });
-  } catch (error: any) {
-    if (error.name === "AbortError") {
+  // Send a message - WORKING UPDATED - INCLUDES STREAMING AND CHAT HISTORY
+  const sendMessage = async () => {
+    // If the input is empty, have the assistant respond with a default message.
+    if (!input) {
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "Response stopped by user." },
+        { role: "assistant", content: "It looks like your message is empty. What can I help you with?" },
       ]);
-    } else {
-      console.error("Chat request failed:", error);
+      return;
     }
-  }
-  setIsGenerating(false);
-};
+
+    // Sanitize and convert to plain text.
+    const sanitizedInput = DOMPurify.sanitize(input);
+    const plainText = stripHtml(sanitizedInput).trim();
+    if (!plainText) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "It looks like your message is empty. What can I help you with?" },
+      ]);
+      setInput("");
+      return;
+    }
+
+    // Create an updated chat history including the new user message.
+    const updatedChatHistory = [
+      ...messages,
+      { role: "user", content: sanitizedInput },
+    ];
+
+    // Append the user's message (with formatting) to the conversation.
+    setMessages(updatedChatHistory);
+    setInput("");
+    setIsGenerating(true);
+    abortController.current = new AbortController();
+
+    // Look for one or more scrape commands in the message.
+    const scrapeMatches = Array.from(
+      plainText.matchAll(/\[include-url:\s*(https?:\/\/[^\s]+).*?\]/g)
+    );
+
+    // Minimized the scraped content because the LLM chat was lagging after printing so many words
+    if (scrapeMatches.length > 0) {
+      // Determine if the command contains the word "summarize"
+      const shouldSummarize = plainText.toLowerCase().includes("summarize");
+      const maxScrapeLength = 2000; // Adjust the maximum length as needed
+
+      // Process each scrape command concurrently.
+      const scrapePromises = scrapeMatches.map(async (match) => {
+        const urlToScrape = match[1];
+        if (!isValidWikipediaUrl(urlToScrape)) {
+          return `⚠️ Invalid Wikipedia URL: ${urlToScrape}`;
+        }
+        try {
+          const res = await fetch("/api/scrape/scrape", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: urlToScrape, summarize: shouldSummarize }),
+          });
+          if (!res.ok) {
+            throw new Error(`HTTP error! Status: ${res.status}`);
+          }
+          const data = await res.json();
+          if (data.error) {
+            return `⚠️ ${shouldSummarize ? "Summarization" : "Scraping"} failed for ${urlToScrape}: ${data.error}`;
+          } else {
+            if (shouldSummarize) {
+              return `🔍 Summary for ${urlToScrape}:\n\n${data.summary}`;
+            } else {
+              let content = data.content;
+              // Post-process the scraped content to ensure it ends with a complete sentence.
+              if (content) {
+                let sentences = content.split(/(?<=[.?!])\s+/);
+                if (sentences.length > 1 && !/[.?!]$/.test(sentences[sentences.length - 1].trim())) {
+                  sentences.pop();
+                }
+                content = sentences.join(" ").trim();
+                if (!/[.?!]$/.test(content)) {
+                  content = content + ".";
+                }
+              }
+              const maxScrapeLength = 2000;
+
+              // if (content && content.length > maxScrapeLength) {
+              //   content = content.substring(0, maxScrapeLength) + "...\n\n";
+              // }
+              
+              if (content && content.length > maxScrapeLength) {
+                // Try to extend the content past maxScrapeLength until the next period
+                const afterLimit = content.substring(maxScrapeLength);
+                const nextPeriodIndex = afterLimit.indexOf(".");
+                if (nextPeriodIndex !== -1) {
+                  // Extend to include the rest of the sentence (up to and including the period)
+                  content = content.substring(0, maxScrapeLength + nextPeriodIndex + 1) + "\n\n";
+                } else {
+                  // Fallback: if no period is found after maxScrapeLength, trim back to the last period before maxScrapeLength
+                  let truncated = content.substring(0, maxScrapeLength);
+                  const lastPeriod = truncated.lastIndexOf(".");
+                  if (lastPeriod !== -1) {
+                    content = truncated.substring(0, lastPeriod + 1) + "\n\n";
+                  } else {
+                    // If no period at all, just use the truncated content
+                    content = truncated + "\n\n";
+                  }
+                }
+              }
+              return `🔍 Scraped Content for ${urlToScrape}:\n\n${content}`;
+            }
+          }
+        } catch (error: any) {
+          console.error(`❌ ${shouldSummarize ? "Summarization" : "Scraping"} request failed for ${urlToScrape}:`, error);
+          return `⚠️ Failed to ${shouldSummarize ? "summarize" : "scrape"} ${urlToScrape}.`;
+        }
+      });
+
+      // Wait for all operations to complete.
+      const results = await Promise.all(scrapePromises);
+      const combinedResult = results.join("\n\n");
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: combinedResult },
+      ]);
+      setIsGenerating(false);
+      return;
+    }
+
+    // Limit the history to the last 10 messages before sending
+    const MAX_HISTORY = 10;
+    const recentHistory = updatedChatHistory.slice(-MAX_HISTORY);
+
+    // Otherwise, send the plain text message along with the limited chat history to the AI API.
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: plainText, chatHistory: recentHistory }),
+        signal: abortController.current.signal,
+      });
+
+      if (!res.ok) {
+        throw new Error("Chat request failed");
+      }
+
+      if (!res.body) {
+        throw new Error("No response body");
+      }
+
+      // Create a placeholder for the streaming assistant message.
+      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let partialResult = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        partialResult += decoder.decode(value, { stream: true });
+
+        // Update the last assistant message with the partial text so far.
+        setMessages((prev) => {
+          const updated = [...prev];
+          const lastIndex = updated.length - 1;
+          if (lastIndex >= 0 && updated[lastIndex].role === "assistant") {
+            updated[lastIndex] = {
+              ...updated[lastIndex],
+              content: partialResult,
+            };
+          }
+          return updated;
+        });
+      }
+    } catch (error: any) {
+      if (error.name === "AbortError") {
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: "Response stopped by user." },
+        ]);
+      } else {
+        console.error("Chat request failed:", error);
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: "Error streaming response." },
+        ]);
+      }
+    }
+    setIsGenerating(false);
+  };
+
 
 
 
