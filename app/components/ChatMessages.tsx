@@ -5,9 +5,34 @@ import "react-quill/dist/quill.snow.css"; // For proper Quill styling
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Edit2, Save } from "lucide-react";
-import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
+
+// Import the Light build from react-syntax-highlighter
+import SyntaxHighlighter from "react-syntax-highlighter/dist/esm/light";
+// Import languages to be registered
+import html from 'react-syntax-highlighter/dist/esm/languages/hljs/xml';
+import js from "react-syntax-highlighter/dist/esm/languages/hljs/javascript";
+import ts from "react-syntax-highlighter/dist/esm/languages/hljs/typescript";
+import php from "react-syntax-highlighter/dist/esm/languages/hljs/php";
+import python from "react-syntax-highlighter/dist/esm/languages/hljs/python";
+import java from "react-syntax-highlighter/dist/esm/languages/hljs/java";
+import cpp from "react-syntax-highlighter/dist/esm/languages/hljs/cpp";
+import bash from "react-syntax-highlighter/dist/esm/languages/hljs/bash";
+import css from "react-syntax-highlighter/dist/esm/languages/hljs/css";
+// Import a style (theme)
 import atomOneDark from "react-syntax-highlighter/dist/esm/styles/hljs/atom-one-dark";
 
+// Register the languages
+SyntaxHighlighter.registerLanguage("html", html);
+SyntaxHighlighter.registerLanguage("javascript", js);
+SyntaxHighlighter.registerLanguage("typescript", ts);
+SyntaxHighlighter.registerLanguage("php", php);
+SyntaxHighlighter.registerLanguage("python", python);
+SyntaxHighlighter.registerLanguage("java", java);
+SyntaxHighlighter.registerLanguage("cpp", cpp);
+SyntaxHighlighter.registerLanguage("bash", bash);
+SyntaxHighlighter.registerLanguage("css", css);
+
+// Dynamically load ReactQuill (only on client-side)
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 export interface Message {
@@ -18,7 +43,6 @@ export interface Message {
 interface ChatMessagesProps {
   messages: Message[];
   editIndex: number | null;
-  /** Callback to trigger edit mode, receiving the message index and its current content */
   onEdit: (index: number, content: string) => void;
   input: string;
   setInput: (value: string) => void;
@@ -41,6 +65,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
           className="p-2 my-2 rounded-lg bg-[#232323] flex items-center"
         >
           {editIndex === index ? (
+            // Edit mode
             <div className="relative w-full">
               <ReactQuill
                 theme="snow"
@@ -74,6 +99,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
               </button>
             </div>
           ) : (
+            // View mode
             <div className="flex items-center w-full">
               {msg.role === "user" && (
                 <button
@@ -90,34 +116,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
                 {msg.role === "user" ? (
                   <div dangerouslySetInnerHTML={{ __html: msg.content }} />
                 ) : (
-                  // Render AI responses as markdown so that code blocks are syntax highlighted.
-                  // <ReactMarkdown
-                  //   remarkPlugins={[remarkGfm]}
-                  //   components={{
-                  //     code({ node, className, children, ...props }) {
-                  //       const match = /language-(\w+)/.exec(className || "");
-                  //       return !className?.includes("inline") && match ? (
-                  //         <SyntaxHighlighter
-                  //           style={atomOneDark as Record<string, React.CSSProperties>}
-                  //           language={match[1] || "plaintext"}
-                  //           PreTag="div"
-                  //           {...(props as any)}
-                  //         >
-                  //           {String(children).replace(/\n$/, "")}
-                  //         </SyntaxHighlighter>
-                  //       ) : (
-                  //         <code
-                  //           className={`${className} bg-gray-800 px-1 py-0.5 rounded`}
-                  //           {...props}
-                  //         >
-                  //           {children}
-                  //         </code>
-                  //       );
-                  //     },
-                  //   }}
-                  // >
-                  //   {msg.content}
-                  // </ReactMarkdown>
+                  // Render AI responses as markdown with code syntax highlighting.
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
@@ -125,9 +124,10 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
                         const match = /language-(\w+)/.exec(className || "");
                         return !className?.includes("inline") && match ? (
                           <SyntaxHighlighter
-                            style={atomOneDark as Record<string, React.CSSProperties>}
+                            style={atomOneDark}
                             language={match[1] || "plaintext"}
                             PreTag="div"
+                            wrapLongLines // <--- Add this prop
                             {...(props as any)}
                           >
                             {String(children).replace(/\n$/, "")}
