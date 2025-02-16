@@ -157,7 +157,7 @@ const Chat: React.FC = () => {
       const maxScrapeLength = 2000; // Adjust the maximum length as needed
 
       // Process each scrape command concurrently.
-      const scrapePromises = scrapeMatches.map(async (match) => {
+      /*const scrapePromises = scrapeMatches.map(async (match) => {
         const urlToScrape = match[1];
         if (!isValidWikipediaUrl(urlToScrape)) {
           return `⚠️ Invalid Wikipedia URL: ${urlToScrape}`;
@@ -183,6 +183,74 @@ const Chat: React.FC = () => {
               if (content && content.length > maxScrapeLength) {
                 // content = content.substring(0, maxScrapeLength) + "...\n\n[Content truncated]";
                 content = content.substring(0, maxScrapeLength) + "...\n\n";
+              }
+              return `🔍 Scraped Content for ${urlToScrape}:\n\n${content}`;
+            }
+          }
+        } catch (error: any) {
+          console.error(`❌ ${shouldSummarize ? "Summarization" : "Scraping"} request failed for ${urlToScrape}:`, error);
+          return `⚠️ Failed to ${shouldSummarize ? "summarize" : "scrape"} ${urlToScrape}.`;
+        }
+      });*/
+
+      // Process each scrape command concurrently.
+      const scrapePromises = scrapeMatches.map(async (match) => {
+        const urlToScrape = match[1];
+        if (!isValidWikipediaUrl(urlToScrape)) {
+          return `⚠️ Invalid Wikipedia URL: ${urlToScrape}`;
+        }
+        try {
+          const res = await fetch("/api/scrape/scrape", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: urlToScrape, summarize: shouldSummarize }),
+          });
+          if (!res.ok) {
+            throw new Error(`HTTP error! Status: ${res.status}`);
+          }
+          const data = await res.json();
+          if (data.error) {
+            return `⚠️ ${shouldSummarize ? "Summarization" : "Scraping"} failed for ${urlToScrape}: ${data.error}`;
+          } else {
+            if (shouldSummarize) {
+              return `🔍 Summary for ${urlToScrape}:\n\n${data.summary}`;
+            } else {
+              let content = data.content;
+              // Post-process the scraped content to ensure it ends with a complete sentence.
+              if (content) {
+                let sentences = content.split(/(?<=[.?!])\s+/);
+                if (sentences.length > 1 && !/[.?!]$/.test(sentences[sentences.length - 1].trim())) {
+                  sentences.pop();
+                }
+                content = sentences.join(" ").trim();
+                if (!/[.?!]$/.test(content)) {
+                  content = content + ".";
+                }
+              }
+              const maxScrapeLength = 2000;
+
+              // if (content && content.length > maxScrapeLength) {
+              //   content = content.substring(0, maxScrapeLength) + "...\n\n";
+              // }
+              
+              if (content && content.length > maxScrapeLength) {
+                // Try to extend the content past maxScrapeLength until the next period
+                const afterLimit = content.substring(maxScrapeLength);
+                const nextPeriodIndex = afterLimit.indexOf(".");
+                if (nextPeriodIndex !== -1) {
+                  // Extend to include the rest of the sentence (up to and including the period)
+                  content = content.substring(0, maxScrapeLength + nextPeriodIndex + 1) + "\n\n";
+                } else {
+                  // Fallback: if no period is found after maxScrapeLength, trim back to the last period before maxScrapeLength
+                  let truncated = content.substring(0, maxScrapeLength);
+                  const lastPeriod = truncated.lastIndexOf(".");
+                  if (lastPeriod !== -1) {
+                    content = truncated.substring(0, lastPeriod + 1) + "\n\n";
+                  } else {
+                    // If no period at all, just use the truncated content
+                    content = truncated + "\n\n";
+                  }
+                }
               }
               return `🔍 Scraped Content for ${urlToScrape}:\n\n${content}`;
             }
