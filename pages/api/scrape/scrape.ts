@@ -1,3 +1,4 @@
+// CURRENT WORKING VERSION - SCRAPING IMPROVED
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 import * as cheerio from "cheerio";
@@ -107,7 +108,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 
 
-
+// ORIGINAL CODE - NO CHAT HISTORY AND SCRAPING IS DISASTER
 /*import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 import * as cheerio from "cheerio";
