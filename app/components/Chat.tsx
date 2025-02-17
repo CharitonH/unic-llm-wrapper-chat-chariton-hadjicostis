@@ -113,7 +113,223 @@ const Chat: React.FC = () => {
 
 
 
+  
+  
+  
+  // Send a message - INCLUDES STREAMING/CHAT HISTORY AND SCRAPING STREAMING
+  // Helper function to stream scraping responses.
+/*const scrapeWebsiteStream = async (
+  url: string,
+  options: Record<string, any> = {}
+): Promise<string> => {
+  try {
+    const res = await fetch("/api/scrape/scrape", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      // Merge the URL and extra options into the request body.
+      body: JSON.stringify({ url, ...options }),
+    });
 
+    if (!res.ok) {
+      throw new Error(`HTTP error! Status: ${res.status}`);
+    }
+    if (!res.body) {
+      throw new Error("No response body");
+    }
+
+    // Create a new placeholder assistant message for streaming.
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let partialResult = "";
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      partialResult += decoder.decode(value, { stream: true });
+
+      // Update the most recent assistant message incrementally.
+      setMessages((prev) => {
+        const updated = [...prev];
+        const lastIndex = updated.length - 1;
+        if (lastIndex >= 0 && updated[lastIndex].role === "assistant") {
+          updated[lastIndex] = { ...updated[lastIndex], content: partialResult };
+        }
+        return updated;
+      });
+    }
+    return partialResult;
+  } catch (error) {
+    console.error("Streaming error:", error);
+    setMessages((prev) => [
+      ...prev,
+      { role: "assistant", content: "Error streaming scraped content." },
+    ]);
+    return "";
+  }
+};
+
+const sendMessage = async () => {
+  // If the input is empty, have the assistant respond with a default message.
+  if (!input) {
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "assistant",
+        content: "It looks like your message is empty. What can I help you with?",
+      },
+    ]);
+    return;
+  }
+
+  // Sanitize and convert to plain text.
+  const sanitizedInput = DOMPurify.sanitize(input);
+  const plainText = stripHtml(sanitizedInput).trim();
+  if (!plainText) {
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "assistant",
+        content: "It looks like your message is empty. What can I help you with?",
+      },
+    ]);
+    setInput("");
+    return;
+  }
+
+  // Append the user’s message (with formatting) to the conversation.
+  const updatedChatHistory = [
+    ...messages,
+    { role: "user", content: sanitizedInput },
+  ];
+  setMessages(updatedChatHistory);
+  setInput("");
+  setIsGenerating(true);
+
+  // Initialize the abort controller.
+  abortController.current = new AbortController();
+  const controller = abortController.current!;
+
+  // Use a regex that captures the URL and any additional key:value parameters.
+  const scrapeMatches = Array.from(
+    plainText.matchAll(
+      /\[include-url:\s*(https?:\/\/[^\s]+)((?:\s+\w+:[^\s]+)*)\]/g
+    )
+  );
+
+  if (scrapeMatches.length > 0) {
+    // Process each scrape command concurrently.
+    const scrapePromises = scrapeMatches.map(async (match) => {
+      const urlToScrape = match[1];
+      const optionsStr = match[2] || "";
+      let options: Record<string, any> = {};
+
+      if (optionsStr.trim()) {
+        // Split the options string into key:value pairs.
+        const keyValuePairs = optionsStr.trim().split(/\s+/);
+        keyValuePairs.forEach((pair) => {
+          const [key, value] = pair.split(":");
+          if (key && value !== undefined) {
+            // Convert "true"/"false" to booleans and numeric strings to numbers.
+            let convertedValue: any = value;
+            if (value === "true") {
+              convertedValue = true;
+            } else if (value === "false") {
+              convertedValue = false;
+            } else if (!isNaN(Number(value))) {
+              convertedValue = Number(value);
+            }
+            options[key] = convertedValue;
+          }
+        });
+      }
+
+      // If "summarize" is not provided in the options, set it based on the plain text.
+      if (options.summarize === undefined) {
+        options.summarize = plainText.toLowerCase().includes("summarize");
+      }
+
+      if (!isValidWikipediaUrl(urlToScrape)) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: `⚠️ Invalid Wikipedia URL: ${urlToScrape}`,
+          },
+        ]);
+        return "";
+      }
+
+      return await scrapeWebsiteStream(urlToScrape, options);
+    });
+
+    // Wait for all scraping operations to complete.
+    await Promise.all(scrapePromises);
+    setIsGenerating(false);
+    return;
+  }
+
+  // Otherwise, send the plain text message along with a limited chat history to the AI API.
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: plainText,
+        chatHistory: updatedChatHistory.slice(-10),
+      }),
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      throw new Error("Chat request failed");
+    }
+    if (!res.body) {
+      throw new Error("No response body");
+    }
+
+    // Create a placeholder for the streaming assistant message.
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let partialResult = "";
+
+    // Read the streaming response and update the UI incrementally.
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      partialResult += decoder.decode(value, { stream: true });
+      setMessages((prev) => {
+        const updated = [...prev];
+        const lastIndex = updated.length - 1;
+        if (lastIndex >= 0 && updated[lastIndex].role === "assistant") {
+          updated[lastIndex] = { ...updated[lastIndex], content: partialResult };
+        }
+        return updated;
+      });
+    }
+  } catch (error: any) {
+    if (error.name === "AbortError") {
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Response stopped by user." },
+      ]);
+    } else {
+      console.error("Chat request failed:", error);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Error streaming response." },
+      ]);
+    }
+  }
+  setIsGenerating(false);
+};*/
+
+  
+
+
+  
 
 
 
@@ -322,7 +538,7 @@ const Chat: React.FC = () => {
 
 
 
-
+  // OLD CODE WORKING - NO HISTORY OR STREAMING
   /*const sendMessage = async () => {
     // If the input is empty, have the assistant respond with a default message.
     if (!input) {
