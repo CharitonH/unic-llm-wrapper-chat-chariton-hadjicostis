@@ -41,7 +41,7 @@
 .button {
   display: inline-block;
   padding: 10px 20px;
-  background-color: #0070f3;
+  background-color: #bb1d2c;
   color: #fff;
   border: none;
   border-radius: 5px;
@@ -50,7 +50,6 @@
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
-
 .button:hover {
-  background-color: #005bb5;
+  background-color: #991722;
 }
