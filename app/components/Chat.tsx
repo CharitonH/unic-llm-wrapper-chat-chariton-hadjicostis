@@ -15,9 +15,17 @@ import { toast } from 'react-toastify';
 /**
  * Helper function to strip HTML tags from a string.
  */
+// const stripHtml = (html: string): string => {
+//   return html.replace(/<[^>]*>?/gm, "");
+// };
+
 const stripHtml = (html: string): string => {
-  return html.replace(/<[^>]*>?/gm, "");
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  return doc.body.textContent?.replace(/\s+/g, " ").trim() || "";
 };
+
+
+
 
 const Chat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -63,30 +71,42 @@ const Chat: React.FC = () => {
 
   const updateMessage = async () => {
     if (editIndex === null) return;
-
-    // 1) Sanitize and convert to plain text (preserve spaces by not trimming).
+    
     const sanitizedInput = DOMPurify.sanitize(input);
-    const plainText = stripHtml(sanitizedInput);
-    if (!plainText) {
+
+    // 2) Only remove HTML tags, but keep spacing exactly as typed:
+    //const plainText = stripHtml(sanitizedInput);
+    const plainText = stripHtml(sanitizedInput).replace(/\s+/g, " "); // Preserve spaces
+
+    if (!plainText.trim()) {
       console.log("Edited message is empty after stripping formatting.");
       return;
     }
 
     // 2) Update the old message in-place:
-    //    Replace the message at editIndex with the new content.
-    //    Then append a new user message at the end.
-    const updatedMessages = messages.map((msg, i) =>
+    /*const updatedMessages = messages.map((msg, i) =>
       i === editIndex ? { ...msg, content: sanitizedInput } : msg
-    );
+    );*/
+    const updatedMessages = messages.map((msg, i) =>
+  i === editIndex ? { ...msg, content: plainText } : msg
+);
+
     const newUserMessage = { role: "user", content: sanitizedInput };
     const newMessages = [...updatedMessages, newUserMessage];
 
     setMessages(newMessages);
     setEditIndex(null);
-    setInput("");
+    setInput(sanitizedInput);
+
+    setTimeout(() => {
+      const inputField = document.querySelector("your-input-selector") as HTMLInputElement; // Ensure selector matches an <input> or <textarea>
+      if (inputField) {
+        inputField.focus();
+        inputField.setSelectionRange(sanitizedInput.length, sanitizedInput.length);
+      }
+    }, 10);
 
     // 3) Send the updated conversation to your AI API, just like sendMessage does.
-    //    Limit to the last 20 messages for context.
     const MAX_HISTORY = 20;
     const recentHistory = newMessages.slice(-MAX_HISTORY);
 
@@ -136,22 +156,26 @@ const Chat: React.FC = () => {
           return updated;
         });
       }
-    } catch (error: any) {
-      if (error.name === "AbortError") {
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: "Response stopped by user." },
-        ]);
+    } catch (error) {
+      console.error("Chat request failed:", error);
+      let errorMessage = "An unknown error occurred.";
+
+      if (error instanceof DOMException && error.name === "AbortError") {
+        errorMessage = "Response stopped by user.";
+      } else if (error instanceof Error) {
+        errorMessage = `Error streaming response: ${error.message}`;
+      } else if (typeof error === "object" && error !== null) {
+        errorMessage = `Error streaming response: ${JSON.stringify(error)}`;
       } else {
-        console.error("Chat request failed:", error);
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: "Error streaming response." },
-        ]);
+        errorMessage = `Error streaming response: ${String(error)}`;
       }
+
+      setMessages((prev) => [...prev, { role: "assistant", content: errorMessage }]);
     }
+
     setIsGenerating(false);
   };
+
 
   const sendMessage = async () => {
     // If the input is empty, have the assistant respond with a default message.
