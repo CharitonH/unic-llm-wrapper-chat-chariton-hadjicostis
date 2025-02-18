@@ -150,8 +150,25 @@ const Chat: React.FC = () => {
       plainText.matchAll(/\[include-url:\s*(https?:\/\/[^\s]+).*?\]/g)
     );
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // ORIGINAL SCRAPING CODE
     // Minimize the scraped content because the LLM chat was lagging after printing so many words
-    if (scrapeMatches.length > 0) {
+    /*if (scrapeMatches.length > 0) {
       // Determine if the command contains the word "summarize"
       const shouldSummarize = plainText.toLowerCase().includes("summarize");
       const maxScrapeLength = 2000; // Adjust the maximum length as needed
@@ -223,7 +240,443 @@ const Chat: React.FC = () => {
       ]);
       setIsGenerating(false);
       return;
+    }*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // SCRAPING WITH STREAMING AND PAUSING AI AND IF STOPPED -> APPROPRIATE MESSAGE
+    // SCRAPING WITH STREAMING AND PAUSING AI
+if (scrapeMatches.length > 0) {
+  // Determine if the command contains the word "summarize"
+  const shouldSummarize = plainText.toLowerCase().includes("summarize");
+  const maxScrapeLength = 2000; // Adjust the maximum length as needed
+
+  // Process each scrape command sequentially to enable streaming updates.
+  for (const match of scrapeMatches) {
+    const urlToScrape = match[1];
+    if (!isValidWikipediaUrl(urlToScrape)) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: `⚠️ Invalid Wikipedia URL: ${urlToScrape}` },
+      ]);
+      continue;
     }
+
+    // Create a placeholder assistant message for this scrape command.
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+    try {
+      const res = await fetch("/api/scrape/scrape", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: urlToScrape, summarize: shouldSummarize }),
+        signal: abortController.current.signal, // Added abort signal here
+      });
+      if (!res.ok) {
+        throw new Error(`HTTP error! Status: ${res.status}`);
+      }
+      if (!res.body) {
+        throw new Error("No response body");
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let streamedContent = "";
+
+      // Read the streamed response chunk by chunk.
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        streamedContent += decoder.decode(value, { stream: true });
+
+        // Update the latest assistant message with the current streamed content.
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: "assistant",
+            content: `🔍 ${shouldSummarize ? "Summary" : "Scraped Content"} for ${urlToScrape}:\n\n${streamedContent}`,
+          };
+          return updated;
+        });
+      }
+
+      // Post-process the complete scraped content.
+      let content = streamedContent;
+      if (content) {
+        let sentences = content.split(/(?<=[.?!])\s+/);
+        if (sentences.length > 1 && !/[.?!]$/.test(sentences[sentences.length - 1].trim())) {
+          sentences.pop();
+        }
+        content = sentences.join(" ").trim();
+        if (!/[.?!]$/.test(content)) {
+          content = content + ".";
+        }
+      }
+
+      // Limit the content length to prevent excessive output.
+      if (content && content.length > maxScrapeLength) {
+        const afterLimit = content.substring(maxScrapeLength);
+        const nextPeriodIndex = afterLimit.indexOf(".");
+        if (nextPeriodIndex !== -1) {
+          content = content.substring(0, maxScrapeLength + nextPeriodIndex + 1) + "\n\n";
+        } else {
+          let truncated = content.substring(0, maxScrapeLength);
+          const lastPeriod = truncated.lastIndexOf(".");
+          if (lastPeriod !== -1) {
+            content = truncated.substring(0, lastPeriod + 1) + "\n\n";
+          } else {
+            content = truncated + "\n\n";
+          }
+        }
+      }
+
+      // Final update with the post-processed content.
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: "assistant",
+          content: `🔍 ${shouldSummarize ? "Summary" : "Scraped Content"} for ${urlToScrape}:\n\n${content}`,
+        };
+        return updated;
+      });
+    } catch (error: any) {
+      // Check if the error was caused by aborting the request.
+      if (error.name === "AbortError") {
+        setMessages((prev) => [
+          ...prev,
+          //{ role: "assistant", content: "Response stopped by user." },
+        ]);
+      } else {
+        console.error(`❌ ${shouldSummarize ? "Summarization" : "Scraping"} request failed for ${urlToScrape}:`, error);
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: `⚠️ Failed to ${shouldSummarize ? "summarize" : "scrape"} ${urlToScrape}.` },
+        ]);
+      }
+    }
+  }
+  setIsGenerating(false);
+  return;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // SCRAPING WITH STREAMING AND PAUSING AI
+/*if (scrapeMatches.length > 0) {
+  // Determine if the command contains the word "summarize"
+  const shouldSummarize = plainText.toLowerCase().includes("summarize");
+  const maxScrapeLength = 2000; // Adjust the maximum length as needed
+
+  // Process each scrape command sequentially to enable streaming updates.
+  for (const match of scrapeMatches) {
+    const urlToScrape = match[1];
+    if (!isValidWikipediaUrl(urlToScrape)) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: `⚠️ Invalid Wikipedia URL: ${urlToScrape}` },
+      ]);
+      continue;
+    }
+
+    // Create a placeholder assistant message for this scrape command.
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+    try {
+      const res = await fetch("/api/scrape/scrape", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: urlToScrape, summarize: shouldSummarize }),
+        signal: abortController.current.signal, // <--- Added abort signal here
+      });
+      if (!res.ok) {
+        throw new Error(`HTTP error! Status: ${res.status}`);
+      }
+      if (!res.body) {
+        throw new Error("No response body");
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let streamedContent = "";
+
+      // Read the streamed response chunk by chunk.
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        streamedContent += decoder.decode(value, { stream: true });
+
+        // Update the latest assistant message with the current streamed content.
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: "assistant",
+            content: `🔍 ${shouldSummarize ? "Summary" : "Scraped Content"} for ${urlToScrape}:\n\n${streamedContent}`,
+          };
+          return updated;
+        });
+      }
+
+      // Post-process the complete scraped content.
+      let content = streamedContent;
+      if (content) {
+        let sentences = content.split(/(?<=[.?!])\s+/);
+        if (sentences.length > 1 && !/[.?!]$/.test(sentences[sentences.length - 1].trim())) {
+          sentences.pop();
+        }
+        content = sentences.join(" ").trim();
+        if (!/[.?!]$/.test(content)) {
+          content = content + ".";
+        }
+      }
+
+      // Limit the content length to prevent excessive output.
+      if (content && content.length > maxScrapeLength) {
+        const afterLimit = content.substring(maxScrapeLength);
+        const nextPeriodIndex = afterLimit.indexOf(".");
+        if (nextPeriodIndex !== -1) {
+          content = content.substring(0, maxScrapeLength + nextPeriodIndex + 1) + "\n\n";
+        } else {
+          let truncated = content.substring(0, maxScrapeLength);
+          const lastPeriod = truncated.lastIndexOf(".");
+          if (lastPeriod !== -1) {
+            content = truncated.substring(0, lastPeriod + 1) + "\n\n";
+          } else {
+            content = truncated + "\n\n";
+          }
+        }
+      }
+
+      // Final update with the post-processed content.
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: "assistant",
+          content: `🔍 ${shouldSummarize ? "Summary" : "Scraped Content"} for ${urlToScrape}:\n\n${content}`,
+        };
+        return updated;
+      });
+    } catch (error: any) {
+      console.error(`❌ ${shouldSummarize ? "Summarization" : "Scraping"} request failed for ${urlToScrape}:`, error);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: `⚠️ Failed to ${shouldSummarize ? "summarize" : "scrape"} ${urlToScrape}.` },
+      ]);
+    }
+  }
+  setIsGenerating(false);
+  return;
+}*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
+
+
+    // SCRAPING WITH STREAMING AND NOT PAUSING AI
+    /*if (scrapeMatches.length > 0) {
+      // Determine if the command contains the word "summarize"
+      const shouldSummarize = plainText.toLowerCase().includes("summarize");
+      const maxScrapeLength = 2000; // Adjust the maximum length as needed
+    
+      // Process each scrape command sequentially to enable streaming updates.
+      for (const match of scrapeMatches) {
+        const urlToScrape = match[1];
+        if (!isValidWikipediaUrl(urlToScrape)) {
+          setMessages((prev) => [
+            ...prev,
+            { role: "assistant", content: `⚠️ Invalid Wikipedia URL: ${urlToScrape}` },
+          ]);
+          continue;
+        }
+    
+        // Create a placeholder assistant message for this scrape command.
+        setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+    
+        try {
+          const res = await fetch("/api/scrape/scrape", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: urlToScrape, summarize: shouldSummarize }),
+          });
+          if (!res.ok) {
+            throw new Error(`HTTP error! Status: ${res.status}`);
+          }
+          if (!res.body) {
+            throw new Error("No response body");
+          }
+    
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let streamedContent = "";
+    
+          // Read the streamed response chunk by chunk.
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            streamedContent += decoder.decode(value, { stream: true });
+    
+            // Update the latest assistant message with the current streamed content.
+            setMessages((prev) => {
+              const updated = [...prev];
+              updated[updated.length - 1] = {
+                role: "assistant",
+                content: `🔍 ${shouldSummarize ? "Summary" : "Scraped Content"} for ${urlToScrape}:\n\n${streamedContent}`,
+              };
+              return updated;
+            });
+          }
+    
+          // Post-process the complete scraped content.
+          let content = streamedContent;
+          if (content) {
+            let sentences = content.split(/(?<=[.?!])\s+/);
+            if (sentences.length > 1 && !/[.?!]$/.test(sentences[sentences.length - 1].trim())) {
+              sentences.pop();
+            }
+            content = sentences.join(" ").trim();
+            if (!/[.?!]$/.test(content)) {
+              content = content + ".";
+            }
+          }
+    
+          // Limit the content length to prevent excessive output.
+          if (content && content.length > maxScrapeLength) {
+            const afterLimit = content.substring(maxScrapeLength);
+            const nextPeriodIndex = afterLimit.indexOf(".");
+            if (nextPeriodIndex !== -1) {
+              content = content.substring(0, maxScrapeLength + nextPeriodIndex + 1) + "\n\n";
+            } else {
+              let truncated = content.substring(0, maxScrapeLength);
+              const lastPeriod = truncated.lastIndexOf(".");
+              if (lastPeriod !== -1) {
+                content = truncated.substring(0, lastPeriod + 1) + "\n\n";
+              } else {
+                content = truncated + "\n\n";
+              }
+            }
+          }
+    
+          // Final update with the post-processed content.
+          setMessages((prev) => {
+            const updated = [...prev];
+            updated[updated.length - 1] = {
+              role: "assistant",
+              content: `🔍 ${shouldSummarize ? "Summary" : "Scraped Content"} for ${urlToScrape}:\n\n${content}`,
+            };
+            return updated;
+          });
+        } catch (error: any) {
+          console.error(`❌ ${shouldSummarize ? "Summarization" : "Scraping"} request failed for ${urlToScrape}:`, error);
+          setMessages((prev) => [
+            ...prev,
+            { role: "assistant", content: `⚠️ Failed to ${shouldSummarize ? "summarize" : "scrape"} ${urlToScrape}.` },
+          ]);
+        }
+      }
+      setIsGenerating(false);
+      return;
+    }*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // Limit the history to the last 10 messages before sending
     const MAX_HISTORY = 10;
