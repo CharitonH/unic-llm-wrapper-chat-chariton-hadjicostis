@@ -61,42 +61,81 @@ const Chat: React.FC = () => {
   // Scroll the chat down when a message is sent
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  // Update an edited message: append it as a new user message and send it to the API.
   const updateMessage = async () => {
     if (editIndex === null) return;
 
-    // Sanitize the input (which may contain formatting HTML)
+    // 1) Sanitize and convert to plain text (preserve spaces by not trimming).
     const sanitizedInput = DOMPurify.sanitize(input);
-    // Convert the sanitized HTML into plain text
-    const plainText = stripHtml(sanitizedInput).trim();
+    const plainText = stripHtml(sanitizedInput);
     if (!plainText) {
       console.log("Edited message is empty after stripping formatting.");
       return;
     }
 
-    // Append the edited message (with formatting for display)
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", content: sanitizedInput },
-    ]);
+    // 2) Update the old message in-place:
+    //    Replace the message at editIndex with the new content.
+    //    Then append a new user message at the end.
+    const updatedMessages = messages.map((msg, i) =>
+      i === editIndex ? { ...msg, content: sanitizedInput } : msg
+    );
+    const newUserMessage = { role: "user", content: sanitizedInput };
+    const newMessages = [...updatedMessages, newUserMessage];
+
+    setMessages(newMessages);
     setEditIndex(null);
     setInput("");
 
-    // Automatically send the plain text version to the AI API.
+    // 3) Send the updated conversation to your AI API, just like sendMessage does.
+    //    Limit to the last 20 messages for context.
+    const MAX_HISTORY = 20;
+    const recentHistory = newMessages.slice(-MAX_HISTORY);
+
     setIsGenerating(true);
     abortController.current = new AbortController();
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: plainText }),
+        body: JSON.stringify({
+          message: plainText,
+          chatHistory: recentHistory,
+        }),
         signal: abortController.current.signal,
       });
-      const data = await res.json();
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: data.response },
-      ]);
+
+      if (!res.ok) {
+        throw new Error("Chat request failed");
+      }
+      if (!res.body) {
+        throw new Error("No response body");
+      }
+
+      // 4) Create a placeholder assistant message for streaming
+      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let partialResult = "";
+
+      // Stream the response chunk-by-chunk
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        partialResult += decoder.decode(value, { stream: true });
+
+        // Update the last assistant message with the partial text so far
+        setMessages((prev) => {
+          const updated = [...prev];
+          const lastIndex = updated.length - 1;
+          if (lastIndex >= 0 && updated[lastIndex].role === "assistant") {
+            updated[lastIndex] = {
+              ...updated[lastIndex],
+              content: partialResult,
+            };
+          }
+          return updated;
+        });
+      }
     } catch (error: any) {
       if (error.name === "AbortError") {
         setMessages((prev) => [
@@ -105,6 +144,10 @@ const Chat: React.FC = () => {
         ]);
       } else {
         console.error("Chat request failed:", error);
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: "Error streaming response." },
+        ]);
       }
     }
     setIsGenerating(false);
