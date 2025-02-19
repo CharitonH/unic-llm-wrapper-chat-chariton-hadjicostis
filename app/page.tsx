@@ -1,3 +1,14 @@
+// import Chat from "./components/Chat";
+
+// export default function Home() {
+//   return <Chat />;
+// }
+
+
+
+
+
+
 import Chat from "./components/Chat";
 
 export default function Home() {
