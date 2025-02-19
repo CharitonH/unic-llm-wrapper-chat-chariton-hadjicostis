@@ -69,34 +69,48 @@ const Chat: React.FC = () => {
   // Scroll the chat down when a message is sent
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  const updateMessage = async () => {
+  // THE USER CANNOT USE SPACE/ENTER/FORMATTING
+  // const updateMessage = async () => {
+  //   if (editIndex === null) return;
+
+  //   // 1) Sanitize user’s Quill HTML, but do NOT collapse spaces.
+  //   const sanitizedInput = DOMPurify.sanitize(input);
+
+  //   // 2) Overwrite the existing message in place with the sanitized HTML
+  //   const updatedMessages = messages.map((msg, i) =>
+  //     i === editIndex
+  //       ? { ...msg, content: sanitizedInput }  // Store the sanitized HTML
+  //       : msg
+  //   );
+
+  // FIXED NOW THE USER CAN USE SPACE/ENTER/FORMATTING
+  const updateMessage = async (newContent: string) => {  // Accept newContent directly
     if (editIndex === null) return;
-    
-    const sanitizedInput = DOMPurify.sanitize(input);
 
-    // 2) Only remove HTML tags, but keep spacing exactly as typed:
-    //const plainText = stripHtml(sanitizedInput);
-    const plainText = stripHtml(sanitizedInput).replace(/\s+/g, " "); // Preserve spaces
+    // 1) Sanitize user’s Quill HTML, but do NOT collapse spaces.
+    const sanitizedInput = DOMPurify.sanitize(newContent); // Use newContent instead of input
 
-    if (!plainText.trim()) {
-      console.log("Edited message is empty after stripping formatting.");
-      return;
-    }
-
-    // 2) Update the old message in-place:
-    /*const updatedMessages = messages.map((msg, i) =>
-      i === editIndex ? { ...msg, content: sanitizedInput } : msg
-    );*/
+    // 2) Overwrite the existing message in place with the sanitized HTML
     const updatedMessages = messages.map((msg, i) =>
-  i === editIndex ? { ...msg, content: plainText } : msg
-);
+      i === editIndex
+        ? { ...msg, content: sanitizedInput }  // Store the sanitized HTML
+        : msg
+    );
 
+    // 3) Optionally add a new user message at the end (depends on your design)
+    //    If you do not want to add a brand-new user message, you can skip this step.
     const newUserMessage = { role: "user", content: sanitizedInput };
     const newMessages = [...updatedMessages, newUserMessage];
 
     setMessages(newMessages);
     setEditIndex(null);
-    setInput(sanitizedInput);
+    setInput("");
+
+    // 4) If sending the updated text to your AI:
+    //    Convert sanitized HTML to plain text (while preserving line breaks)
+    //    Or just send the HTML if your AI can handle HTML.
+    const doc = new DOMParser().parseFromString(sanitizedInput, "text/html");
+    const plainText = doc.body.innerText;
 
     setTimeout(() => {
       const inputField = document.querySelector("your-input-selector") as HTMLInputElement; // Ensure selector matches an <input> or <textarea>
@@ -175,7 +189,6 @@ const Chat: React.FC = () => {
 
     setIsGenerating(false);
   };
-
 
   const sendMessage = async () => {
     // If the input is empty, have the assistant respond with a default message.
@@ -455,7 +468,9 @@ const Chat: React.FC = () => {
             onEdit={editMessage}
             input={input}
             setInput={setInput}
-            updateMessage={updateMessage}
+            //updateMessage={updateMessage} // THE USER CANNOT USE SPACE/ENTER/FORMATTING
+            // FIXED NOW THE USER CAN USE SPACE/ENTER/FORMATTING
+            updateMessage={(newContent) => updateMessage(newContent)} // ✅ Now correctly passes a string argumen
           />
         </div>
         {/* Chat Input */}

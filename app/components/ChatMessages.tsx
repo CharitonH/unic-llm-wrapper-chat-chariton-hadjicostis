@@ -1,11 +1,12 @@
 // NEW CODE WORKING - WITH OPTIMIZE MOBILE VIEW WHILE SCRAPING
 "use client";
 
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import "react-quill/dist/quill.snow.css";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Edit2, Save } from "lucide-react";
+import { Edit2, Save, X } from "lucide-react";
 
 import SyntaxHighlighter from "react-syntax-highlighter/dist/esm/light";
 import html from "react-syntax-highlighter/dist/esm/languages/hljs/xml";
@@ -43,7 +44,9 @@ interface ChatMessagesProps {
   onEdit: (index: number, content: string) => void;
   input: string;
   setInput: (value: string) => void;
-  updateMessage: () => void;
+  //updateMessage: () => void; // THE USER CANNOT USE SPACE/ENTER/FORMATTING
+  // FIXED NOW THE USER CAN USE SPACE/ENTER/FORMATTING
+  updateMessage: (newContent: string) => void; // ✅ Now expects a string argument
 }
 
 const ChatMessages: React.FC<ChatMessagesProps> = ({
@@ -54,11 +57,16 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
   setInput,
   updateMessage,
 }) => {
+  const [editorContent, setEditorContent] = useState(input);
+
+  // Sync changes with parent state to avoid cursor jump issues
+  useEffect(() => {
+    setEditorContent(input);
+  }, [input]);
+
   return (
-    // 1) Hide horizontal overflow so it never scrolls horizontally
     <div className="h-80 overflow-y-auto overflow-x-hidden bg-[#121212] p-4 rounded-lg mt-4 border border-gray-600">
       {messages.map((msg, index) => (
-        // 2) Use flex-wrap so if something is too wide, it breaks to a new line
         <div
           key={index}
           className="p-2 my-2 rounded-lg bg-[#232323] flex flex-wrap items-start"
@@ -67,11 +75,13 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
             // Edit mode
             <div className="relative w-full">
               <ReactQuill
+                // FIXED NOW THE USER CAN USE SPACE/ENTER/FORMATTING
                 theme="snow"
-                value={input}
-                onChange={(content, delta, source, editor) =>
-                  setInput(editor.getHTML())
-                }
+                value={editorContent}
+                preserveWhitespace={true} // Ensures spaces and newlines remain
+                onChange={(content, delta, source, editor) => {
+                  setEditorContent(content);
+                }}
                 className="bg-[#121212] text-white rounded-lg"
                 modules={{
                   toolbar: [
@@ -90,12 +100,29 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
                   "link",
                 ]}
               />
-              <button
-                onClick={updateMessage}
-                className="absolute top-2 right-3 text-white flex items-center"
-              >
-                <Save size={20} />
-              </button>
+              <div className="absolute top-2 right-3 flex items-center space-x-3">
+                {/* Save button - FIXED SENDING THE UPDATED MESSAGE*/}
+                <button
+                  onClick={() => {
+                    updateMessage(editorContent); // ✅ Now correctly calls the function with new content
+                    onEdit(-1, ""); // ✅ Exits edit mode properly
+                  }}
+                  className="text-white flex items-center"
+                >
+                  <Save size={20} />
+                </button>
+
+                {/* Cancel edit button */}
+                <button
+                  onClick={() => {
+                    setEditorContent(""); // Clear local editor content
+                    onEdit(-1, ""); // Exit edit mode
+                  }}
+                  className="text-white flex items-center"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
           ) : (
             // View mode
@@ -109,10 +136,6 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
                 </button>
               )}
 
-              {/* 
-                3) whitespace-pre-wrap + break-all 
-                   ensures even huge single-word text (like a long URL) will wrap
-              */}
               <div className="flex-1 px-3 py-2 text-white whitespace-pre-wrap break-all">
                 <strong className="mr-2">
                   {msg.role === "user" ? "You:" : "AI:"}
@@ -160,6 +183,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 };
 
 export default ChatMessages;
+
 
 
 
