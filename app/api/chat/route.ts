@@ -21,7 +21,6 @@ interface ChatRequestBody {
   chatHistory?: ChatMessage[];
 }
 
-
 export async function POST(req: Request) {
   try {
     const { message, chatHistory }: ChatRequestBody = await req.json();

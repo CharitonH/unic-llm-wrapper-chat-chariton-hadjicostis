@@ -109,8 +109,50 @@ const Chat: React.FC = () => {
     // 4) If sending the updated text to your AI:
     //    Convert sanitized HTML to plain text (while preserving line breaks)
     //    Or just send the HTML if your AI can handle HTML.
+    //const doc = new DOMParser().parseFromString(sanitizedInput, "text/html");
+    //const plainText = doc.body.innerText;
+
+    // SECOND TRY TO SOLVE AI RESPONSE WHEN SENDING TEXT FORMATTING
     const doc = new DOMParser().parseFromString(sanitizedInput, "text/html");
-    const plainText = doc.body.innerText;
+    // Convert HTML into pure text without <p> tags
+    function extractPlainText(node: Node): string {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return node.textContent?.trim() || "";
+      }
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const element = node as HTMLElement;
+        if (element.tagName === "P" || element.tagName === "BR") {
+          return "\n" + Array.from(element.childNodes).map(extractPlainText).join("");
+        }
+        return Array.from(element.childNodes).map(extractPlainText).join(" ");
+      }
+      return node.textContent?.trim() || "";
+    }
+    // Final cleaned text
+    const plainText = extractPlainText(doc.body).replace(/\n+/g, "\n").trim();
+    console.log("Cleaned Text Sent to AI:", plainText);
+
+
+    // FIRST TRY TO SOLVE AI RESPONSE WHEN SENDING TEXT FORMATTING
+    /*const doc = new DOMParser().parseFromString(sanitizedInput, "text/html");
+    // Convert lists to plain text format correctly
+    function extractPlainText(node: Node): string {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return node.textContent?.trim() || "";
+      }
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const element = node as HTMLElement;
+        if (element.tagName === "OL" || element.tagName === "UL") {
+          return Array.from(element.children)
+            .map((child, index) => `${index + 1}. ${extractPlainText(child)}`)
+            .join("\n");
+        }
+      }
+      return node.textContent?.trim() || "";
+    }
+    // Final cleaned text
+    const plainText = extractPlainText(doc.body);
+    console.log("Cleaned Text Sent to AI:", plainText);*/
 
     setTimeout(() => {
       const inputField = document.querySelector("your-input-selector") as HTMLInputElement; // Ensure selector matches an <input> or <textarea>
@@ -131,11 +173,20 @@ const Chat: React.FC = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: plainText,
+          message: plainText, // ✅ Correctly formatted list
           chatHistory: recentHistory,
         }),
         signal: abortController.current.signal,
       });
+      // const res = await fetch("/api/chat", {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify({
+      //     message: plainText,
+      //     chatHistory: recentHistory,
+      //   }),
+      //   signal: abortController.current.signal,
+      // });
 
       if (!res.ok) {
         throw new Error("Chat request failed");
@@ -152,24 +203,48 @@ const Chat: React.FC = () => {
       let partialResult = "";
 
       // Stream the response chunk-by-chunk
+      let completeResponse = ""; // Store the full AI response
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-        partialResult += decoder.decode(value, { stream: true });
-
-        // Update the last assistant message with the partial text so far
+        
+        const chunk = decoder.decode(value, { stream: true });
+        completeResponse += chunk; // Append chunk to the full response
+        
         setMessages((prev) => {
           const updated = [...prev];
           const lastIndex = updated.length - 1;
           if (lastIndex >= 0 && updated[lastIndex].role === "assistant") {
             updated[lastIndex] = {
               ...updated[lastIndex],
-              content: partialResult,
+              content: completeResponse, // Ensure full response is stored
             };
           }
           return updated;
         });
       }
+      // Log to check if the full response was received
+      console.log("Final AI Response in updateMessage:", completeResponse);
+
+      
+      // while (true) {
+      //   const { value, done } = await reader.read();
+      //   if (done) break;
+      //   partialResult += decoder.decode(value, { stream: true });
+
+      //   // Update the last assistant message with the partial text so far
+      //   setMessages((prev) => {
+      //     const updated = [...prev];
+      //     const lastIndex = updated.length - 1;
+      //     if (lastIndex >= 0 && updated[lastIndex].role === "assistant") {
+      //       updated[lastIndex] = {
+      //         ...updated[lastIndex],
+      //         content: partialResult,
+      //       };
+      //     }
+      //     return updated;
+      //   });
+      // }
     } catch (error) {
       console.error("Chat request failed:", error);
       let errorMessage = "An unknown error occurred.";
@@ -248,6 +323,10 @@ const Chat: React.FC = () => {
   
         // Create a placeholder assistant message for this scrape command.
         setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+        /*setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: `🔍 Fetching data from ${urlToScrape}...` }, // Temporary placeholder
+        ]);*/
   
         try {
           const res = await fetch("/api/scrape/scrape", {
@@ -268,6 +347,29 @@ const Chat: React.FC = () => {
           let streamedContent = "";
   
           // Read the streamed response chunk by chunk.
+          let completeResponse = ""; // Store the full AI response
+          // while (true) {
+          //   const { value, done } = await reader.read();
+          //   if (done) break;
+            
+          //   const chunk = decoder.decode(value, { stream: true });
+          //   completeResponse += chunk; // Append chunk to full response
+            
+          //   setMessages((prev) => {
+          //     const updated = [...prev];
+          //     const lastIndex = updated.length - 1;
+          //     if (lastIndex >= 0 && updated[lastIndex].role === "assistant") {
+          //       updated[lastIndex] = {
+          //         ...updated[lastIndex],
+          //         content: completeResponse, // Ensure full response is stored
+          //       };
+          //     }
+          //     return updated;
+          //   });
+          // }
+          // // Log to check if the full response was received
+          // console.log("Final AI Response in sendMessage:", completeResponse);
+
           while (true) {
             const { value, done } = await reader.read();
             if (done) break;
