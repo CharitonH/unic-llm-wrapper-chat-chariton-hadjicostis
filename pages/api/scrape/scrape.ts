@@ -82,7 +82,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   let contentToStream = "";
-  if (summarize) {
+  /*if (summarize) {
     // Instead of taking a fixed 5 sentences, accumulate sentences until a minimum length is reached.
     const minSummaryLength = 500; // Minimum desired summary length in characters
     let sentences = scrapedContent.split(/(?<=[.?!])\s+/);
@@ -96,7 +96,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     contentToStream = summary.trim();
     console.log(`📝 Generated summary length: ${contentToStream.length}`);
-  } else {
+  } else {*/
     // For non-summarized output, use the first 5 sentences
     let sentences = scrapedContent.split(/(?<=[.?!])\s+/);
     if (sentences.length > 1 && !/[.?!]$/.test(sentences[sentences.length - 1].trim())) {
@@ -104,7 +104,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     const numSentences = Math.min(5, sentences.length);
     contentToStream = sentences.slice(0, numSentences).join(" ").trim();
-  }
+  //}
 
   // Set up headers for streaming response
   res.writeHead(200, {
