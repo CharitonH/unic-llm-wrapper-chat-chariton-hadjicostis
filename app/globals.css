@@ -109,21 +109,14 @@ li#unic-user-profile {
   margin-left: 15px !important;
 }
 
-/* Force bullets or numbers to appear */
-/*.ql-editor ul,
-.ql-editor ol {
-  margin-left: 1.5rem;
-}
-.ql-editor ul {
-  list-style-type: disc;
-}
-.ql-editor ol {
-  list-style-type: decimal; 
-}*/
-.flex-1 ul,
-.flex-1 ol {
+/* Force bullets or numbers to appear when sending to the chat */
+.flex-1 ul {
   margin-left: 1.5rem !important;
   list-style-type: disc !important;
+}
+.flex-1 ol {
+  margin-left: 1.5rem !important;
+  list-style-type: decimal !important;
 }
 
 /* Mobile Styles */
