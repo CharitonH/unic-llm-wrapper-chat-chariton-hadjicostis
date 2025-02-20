@@ -539,87 +539,184 @@ const Chat: React.FC = () => {
     setIsCommandsOpen(false);
   };
 
-  return (
-    // ORIGINAL CODE - CHAT IS IN MIDDLE
-     <div className="w-full h-screen flex flex-col items-center justify-center bg-[#121212] text-white px-4">
-      <div className="w-full max-w-4xl mx-auto bg-[#1a1a1a] p-6 rounded-lg shadow-lg border border-gray-700">
+  // return (
+  //   // ORIGINAL CODE - CHAT IS IN MIDDLE
+  //    //<div className="w-full h-screen flex flex-col items-center justify-center bg-[#121212] text-white px-4">
+  //     //<div className="w-full max-w-4xl mx-auto bg-[#1a1a1a] p-6 rounded-lg shadow-lg border border-gray-700">
+
+  //     <div className="w-full h-auto md:h-screen flex flex-col bg-[#121212] text-white px-4">
+  //      <div className="w-full max-w-4xl mx-auto bg-[#1a1a1a] p-6 rounded-lg shadow-lg border border-gray-700 flex flex-col h-full">
     
-    {/* // MODIFY CODE - CHAT IS FULL WIDTH */}
-    {/* <div className="w-full h-screen flex flex-col items-center justify-center bg-[#121212] text-white px-4">
-      <div className="w-full mx-auto bg-[#1a1a1a] p-6 rounded-lg shadow-lg border border-gray-700"> */}
-        {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-2">
-          <Image src={UnicLogo} alt="UNIC Logo" width={350} height={50} />
-        </div>
-        {/* Chat Title */}
-        <div className="flex flex-col items-center justify-center text-center my-4">
-          <h2 className="text-2xl font-extrabold tracking-wide uppercase bg-gradient-to-r from-[#f1f1f1] via-[#f1f1f1] to-[#f1f1f1] text-transparent bg-clip-text">
-            LLM Wrapper Chat
-          </h2>
-        </div>
-        {/* Greeting */}
-        <Greeting />
-        {/* Chat Messages */}
-        <div ref={chatContainerRef}>
-          <ChatMessages
-            messages={messages}
-            editIndex={editIndex}
-            onEdit={editMessage}
-            input={input}
-            setInput={setInput}
-            //updateMessage={updateMessage} // THE USER CANNOT USE SPACE/ENTER/FORMATTING
-            // FIXED NOW THE USER CAN USE SPACE/ENTER/FORMATTING
-            updateMessage={(newContent) => updateMessage(newContent)} // ✅ Now correctly passes a string argumen
-          />
-        </div>
-        {/* Chat Input */}
-        <ChatInput
+  //   {/* // MODIFY CODE - CHAT IS FULL WIDTH */}
+  //   {/* <div className="w-full h-screen flex flex-col items-center justify-center bg-[#121212] text-white px-4">
+  //     <div className="w-full mx-auto bg-[#1a1a1a] p-6 rounded-lg shadow-lg border border-gray-700"> */}
+  //       {/* Logo */}
+  //       <div className="flex items-center justify-center gap-3 mb-2">
+  //         <Image src={UnicLogo} alt="UNIC Logo" width={350} height={50} />
+  //       </div>
+  //       {/* Chat Title */}
+  //       <div className="flex flex-col items-center justify-center text-center my-4">
+  //         <h2 className="text-2xl font-extrabold tracking-wide uppercase bg-gradient-to-r from-[#f1f1f1] via-[#f1f1f1] to-[#f1f1f1] text-transparent bg-clip-text">
+  //           LLM Wrapper Chat
+  //         </h2>
+  //       </div>
+  //       {/* Greeting */}
+  //       <Greeting />
+  //       {/* Chat Messages */}
+  //       <div ref={chatContainerRef} className="flex-1 w-full overflow-y-auto min-h-0">
+  //         <ChatMessages
+  //           messages={messages}
+  //           editIndex={editIndex}
+  //           onEdit={editMessage}
+  //           input={input}
+  //           setInput={setInput}
+  //           //updateMessage={updateMessage} // THE USER CANNOT USE SPACE/ENTER/FORMATTING
+  //           // FIXED NOW THE USER CAN USE SPACE/ENTER/FORMATTING
+  //           updateMessage={(newContent) => updateMessage(newContent)} // ✅ Now correctly passes a string argumen
+  //         />
+  //       </div>
+  //       {/* Chat Input */}
+  //       <ChatInput
+  //         input={input}
+  //         setInput={setInput}
+  //         isGenerating={isGenerating}
+  //         sendMessage={sendMessage}
+  //         stopGenerating={stopGenerating}
+  //       />
+  //       {/* Commands Modal */}
+  //       <CommandsModal
+  //         url={url}
+  //         setUrl={setUrl}
+  //         onScrape={handleScrapeCommand}
+  //         isCommandsOpen={isCommandsOpen}
+  //         setIsCommandsOpen={setIsCommandsOpen}
+  //         isAdvancedOpen={isAdvancedOpen}
+  //         setIsAdvancedOpen={setIsAdvancedOpen}
+  //         maxExecutionTime={maxExecutionTime}
+  //         setMaxExecutionTime={setMaxExecutionTime}
+  //         filter={filter}
+  //         setFilter={setFilter}
+  //         store={store}
+  //         setStore={setStore}
+  //       />
+  //       {/* Command Buttons with Icons */}
+  //       <div className="mt-4 flex flex-wrap gap-3 text-gray-400">
+  //         <button
+  //           className="flex items-center gap-2 p-2 bg-[#232323] rounded border border-gray-600 text-gray-300"
+  //           onClick={() => setIsCommandsOpen(true)}
+  //         >
+  //           <Terminal size={16} /> <span>Commands</span>
+  //         </button>
+  //         <button className="flex items-center gap-2 p-2 bg-[#232323] rounded border border-gray-600 text-gray-300">
+  //           <BookOpen size={16} /> <span>Prompts</span>
+  //         </button>
+  //         <button className="flex items-center gap-2 p-2 bg-[#232323] rounded border border-gray-600 text-gray-300">
+  //           <User size={16} /> <span>Personas</span>
+  //         </button>
+  //         <button className="flex items-center gap-2 p-2 bg-[#232323] rounded border border-gray-600 text-gray-300">
+  //           <Plus size={16} /> <span>Add</span>
+  //         </button>
+  //         <span className="ml-auto text-gray-500 flex items-center">
+  //           32/618 <FiCircle size={18} className="ml-1 text-gray-500" />
+  //         </span>
+  //       </div>
+  //     </div>
+  //   </div>
+  // );
+
+
+
+
+
+  return (
+  // ORIGINAL CODE - CHAT IS IN MIDDLE
+  //<div className="w-full h-screen flex flex-col items-center justify-center bg-[#121212] text-white px-4">
+  //<div className="w-full max-w-4xl mx-auto bg-[#1a1a1a] p-6 rounded-lg shadow-lg border border-gray-700">
+
+  // 1) Outer container: min-h-screen on mobile, full h-screen on md+, flex layout
+    <div className="w-full min-h-screen md:h-screen md:min-h-0 md:h-auto flex flex-col bg-[#121212] text-white px-4 m-0 p-0">
+
+    {/* 2) Inner container: flex-1 to expand, plus h-full on md+ */}
+    <div className="w-full max-w-4xl mx-auto bg-[#1a1a1a] p-6 rounded-lg shadow-lg border border-gray-700 flex flex-col h-full flex-1 md:h-full">
+      
+      {/* // MODIFY CODE - CHAT IS FULL WIDTH */}
+      {/* <div className="w-full h-screen flex flex-col items-center justify-center bg-[#121212] text-white px-4">
+          <div className="w-full mx-auto bg-[#1a1a1a] p-6 rounded-lg shadow-lg border border-gray-700"> */}
+      
+      {/* Logo */}
+      <div className="flex items-center justify-center gap-3 mb-2">
+        <Image src={UnicLogo} alt="UNIC Logo" width={350} height={50} />
+      </div>
+      {/* Chat Title */}
+      <div className="flex flex-col items-center justify-center text-center my-4">
+        <h2 className="text-2xl font-extrabold tracking-wide uppercase bg-gradient-to-r from-[#f1f1f1] via-[#f1f1f1] to-[#f1f1f1] text-transparent bg-clip-text">
+          LLM Wrapper Chat
+        </h2>
+      </div>
+      {/* Greeting */}
+      <Greeting />
+      {/* Chat Messages */}
+      <div ref={chatContainerRef} className="flex-1 w-full overflow-y-auto min-h-0">
+        <ChatMessages
+          messages={messages}
+          editIndex={editIndex}
+          onEdit={editMessage}
           input={input}
           setInput={setInput}
-          isGenerating={isGenerating}
-          sendMessage={sendMessage}
-          stopGenerating={stopGenerating}
+          //updateMessage={updateMessage} // THE USER CANNOT USE SPACE/ENTER/FORMATTING
+          // FIXED NOW THE USER CAN USE SPACE/ENTER/FORMATTING
+          updateMessage={(newContent) => updateMessage(newContent)} // ✅ Now correctly passes a string argument
         />
-        {/* Commands Modal */}
-        <CommandsModal
-          url={url}
-          setUrl={setUrl}
-          onScrape={handleScrapeCommand}
-          isCommandsOpen={isCommandsOpen}
-          setIsCommandsOpen={setIsCommandsOpen}
-          isAdvancedOpen={isAdvancedOpen}
-          setIsAdvancedOpen={setIsAdvancedOpen}
-          maxExecutionTime={maxExecutionTime}
-          setMaxExecutionTime={setMaxExecutionTime}
-          filter={filter}
-          setFilter={setFilter}
-          store={store}
-          setStore={setStore}
-        />
-        {/* Command Buttons with Icons */}
-        <div className="mt-4 flex flex-wrap gap-3 text-gray-400">
-          <button
-            className="flex items-center gap-2 p-2 bg-[#232323] rounded border border-gray-600 text-gray-300"
-            onClick={() => setIsCommandsOpen(true)}
-          >
-            <Terminal size={16} /> <span>Commands</span>
-          </button>
-          <button className="flex items-center gap-2 p-2 bg-[#232323] rounded border border-gray-600 text-gray-300">
-            <BookOpen size={16} /> <span>Prompts</span>
-          </button>
-          <button className="flex items-center gap-2 p-2 bg-[#232323] rounded border border-gray-600 text-gray-300">
-            <User size={16} /> <span>Personas</span>
-          </button>
-          <button className="flex items-center gap-2 p-2 bg-[#232323] rounded border border-gray-600 text-gray-300">
-            <Plus size={16} /> <span>Add</span>
-          </button>
-          <span className="ml-auto text-gray-500 flex items-center">
-            32/618 <FiCircle size={18} className="ml-1 text-gray-500" />
-          </span>
-        </div>
+      </div>
+      {/* Chat Input */}
+      <ChatInput
+        input={input}
+        setInput={setInput}
+        isGenerating={isGenerating}
+        sendMessage={sendMessage}
+        stopGenerating={stopGenerating}
+      />
+      {/* Commands Modal */}
+      <CommandsModal
+        url={url}
+        setUrl={setUrl}
+        onScrape={handleScrapeCommand}
+        isCommandsOpen={isCommandsOpen}
+        setIsCommandsOpen={setIsCommandsOpen}
+        isAdvancedOpen={isAdvancedOpen}
+        setIsAdvancedOpen={setIsAdvancedOpen}
+        maxExecutionTime={maxExecutionTime}
+        setMaxExecutionTime={setMaxExecutionTime}
+        filter={filter}
+        setFilter={setFilter}
+        store={store}
+        setStore={setStore}
+      />
+      {/* Command Buttons with Icons */}
+      <div className="mt-4 flex flex-wrap gap-3 text-gray-400">
+        <button
+          className="flex items-center gap-2 p-2 bg-[#232323] rounded border border-gray-600 text-gray-300"
+          onClick={() => setIsCommandsOpen(true)}
+        >
+          <Terminal size={16} /> <span>Commands</span>
+        </button>
+        <button className="flex items-center gap-2 p-2 bg-[#232323] rounded border border-gray-600 text-gray-300">
+          <BookOpen size={16} /> <span>Prompts</span>
+        </button>
+        <button className="flex items-center gap-2 p-2 bg-[#232323] rounded border border-gray-600 text-gray-300">
+          <User size={16} /> <span>Personas</span>
+        </button>
+        <button className="flex items-center gap-2 p-2 bg-[#232323] rounded border border-gray-600 text-gray-300">
+          <Plus size={16} /> <span>Add</span>
+        </button>
+        <span className="ml-auto text-gray-500 flex items-center">
+          32/618 <FiCircle size={18} className="ml-1 text-gray-500" />
+        </span>
       </div>
     </div>
-  );
+  </div>
+);
+
 };
 
 export default Chat;

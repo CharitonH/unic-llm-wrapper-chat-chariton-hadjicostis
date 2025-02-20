@@ -25,15 +25,15 @@ export const hfClient = new HfInference(HF_TOKEN);
 
 // This function returns an async iterator (a "stream") of ChatCompletionStreamResponse chunks
 export function getChatCompletionStream(messages: ChatCompletionRequestMessage[]) {
-  /*return hfClient.chatCompletionStream({
+  return hfClient.chatCompletionStream({
     model: "microsoft/Phi-3-mini-4k-instruct",
     messages,
     provider: "hf-inference",
     //max_tokens: 500,
     max_tokens: 1024,
-  });*/
+  });
 
-  return hfClient.chatCompletionStream({
+  /*return hfClient.chatCompletionStream({
     model: "microsoft/Phi-3-mini-4k-instruct",
     messages: [
       { role: "system", content: "Provide clear, concise responses. Do not add unnecessary spaces or line breaks." },
@@ -41,5 +41,5 @@ export function getChatCompletionStream(messages: ChatCompletionRequestMessage[]
     ],
     provider: "hf-inference",
     max_tokens: 1024,  // Increase token limit for longer responses
-  });
+  });*/
 }
