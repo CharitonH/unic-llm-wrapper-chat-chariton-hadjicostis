@@ -24,9 +24,6 @@ const stripHtml = (html: string): string => {
   return doc.body.textContent?.replace(/\s+/g, " ").trim() || "";
 };
 
-
-
-
 const Chat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -544,12 +541,12 @@ const Chat: React.FC = () => {
 
   return (
     // ORIGINAL CODE - CHAT IS IN MIDDLE
-    // <div className="w-full h-screen flex flex-col items-center justify-center bg-[#121212] text-white px-4">
-    //  <div className="w-full max-w-4xl mx-auto bg-[#1a1a1a] p-6 rounded-lg shadow-lg border border-gray-700">
+     <div className="w-full h-screen flex flex-col items-center justify-center bg-[#121212] text-white px-4">
+      <div className="w-full max-w-4xl mx-auto bg-[#1a1a1a] p-6 rounded-lg shadow-lg border border-gray-700">
     
-    // MODIFY CODE - CHAT IS FULL WIDTH
-    <div className="w-full h-screen flex flex-col items-center justify-center bg-[#121212] text-white px-4">
-      <div className="w-full mx-auto bg-[#1a1a1a] p-6 rounded-lg shadow-lg border border-gray-700">
+    {/* // MODIFY CODE - CHAT IS FULL WIDTH */}
+    {/* <div className="w-full h-screen flex flex-col items-center justify-center bg-[#121212] text-white px-4">
+      <div className="w-full mx-auto bg-[#1a1a1a] p-6 rounded-lg shadow-lg border border-gray-700"> */}
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-2">
           <Image src={UnicLogo} alt="UNIC Logo" width={350} height={50} />
