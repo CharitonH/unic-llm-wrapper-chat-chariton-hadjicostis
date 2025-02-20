@@ -70,10 +70,6 @@ body, html {
   padding: 10px; /* Adjust spacing */
 }
 
-
-
-
-
 /* Ensure message background is dark */
 .user-message {
   background-color: #121212 !important;
@@ -111,6 +107,23 @@ li#unic-user-profile {
   left: 0 !important;
   position: absolute !important;
   margin-left: 15px !important;
+}
+
+/* Force bullets or numbers to appear */
+/*.ql-editor ul,
+.ql-editor ol {
+  margin-left: 1.5rem;
+}
+.ql-editor ul {
+  list-style-type: disc;
+}
+.ql-editor ol {
+  list-style-type: decimal; 
+}*/
+.flex-1 ul,
+.flex-1 ol {
+  margin-left: 1.5rem !important;
+  list-style-type: disc !important;
 }
 
 /* Mobile Styles */
