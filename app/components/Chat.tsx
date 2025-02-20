@@ -18,7 +18,6 @@ import { toast } from 'react-toastify';
 // const stripHtml = (html: string): string => {
 //   return html.replace(/<[^>]*>?/gm, "");
 // };
-
 const stripHtml = (html: string): string => {
   const doc = new DOMParser().parseFromString(html, "text/html");
   return doc.body.textContent?.replace(/\s+/g, " ").trim() || "";
@@ -35,9 +34,10 @@ const Chat: React.FC = () => {
   const [filter, setFilter] = useState(false);
   const [store, setStore] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
-
   const abortController = useRef<AbortController | null>(null);
+  // Have the scrollbar follow up the AI when typing
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
   // At the top of your file or inside the component:
   const isValidWikipediaUrl = (url: string): boolean => {
@@ -50,21 +50,86 @@ const Chat: React.FC = () => {
     }
   };
 
-  // Auto-scroll to the latest message whenever messages update.
-  useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-    }
-  }, [messages]);
-  
   // Trigger edit mode by loading the current message's content into the input field.
   const editMessage = (index: number, content: string) => {
     setInput(content);
     setEditIndex(index);
   };
-  
+
+  // Auto-scroll to the latest message whenever messages update.
+  // useEffect(() => {
+  //   if (chatContainerRef.current) {
+  //     chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+  //   }
+  // }, [messages]);
+
   // Scroll the chat down when a message is sent
-  const bottomRef = useRef<HTMLDivElement | null>(null);
+  // useEffect(() => {
+  //   // This will smoothly scroll to the bottom element whenever messages change.
+  //   bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  // }, [messages]);
+  // useEffect(() => {
+  //   if (chatContainerRef.current) {
+  //     chatContainerRef.current.scrollTo({
+  //       top: chatContainerRef.current.scrollHeight,
+  //       behavior: "smooth",
+  //     });
+  //   }
+  // }, [messages]);
+//   useEffect(() => {
+//   if (chatContainerRef.current) {
+//     chatContainerRef.current.scrollTo({
+//       top: chatContainerRef.current.scrollHeight,
+//       behavior: "smooth",
+//     });
+//   }
+// }, [messages]);
+// useEffect(() => {
+//   const chatContainer = chatContainerRef.current;
+//   if (!chatContainer) return;
+
+//   // Function to auto-scroll only if the user is at the bottom
+//   const scrollToBottom = () => {
+//     const isAtBottom =
+//       chatContainer.scrollHeight - chatContainer.scrollTop <= chatContainer.clientHeight + 10;
+
+//     if (isAtBottom) {
+//       chatContainer.scrollTo({
+//         top: chatContainer.scrollHeight,
+//         behavior: "smooth",
+//       });
+//     }
+//   };
+
+//   // Set up a MutationObserver to detect changes in chat content during streaming
+//   const observer = new MutationObserver(scrollToBottom);
+//   observer.observe(chatContainer, { childList: true, subtree: true });
+
+//   // Ensure we scroll when new messages arrive
+//   scrollToBottom();
+
+//   return () => observer.disconnect(); // Cleanup on unmount
+// }, [messages]);
+  useEffect(() => {
+    const chatContainer = chatContainerRef.current;
+    if (!chatContainer) return;
+
+    // Check if user is already at the bottom (prevents forced scrolling)
+    const isAtBottom =
+      chatContainer.scrollHeight - chatContainer.scrollTop <= chatContainer.clientHeight + 50;
+
+    if (isAtBottom) {
+      chatContainer.scrollTo({
+        top: chatContainer.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, [messages]);
+
+
+
+
+
 
   // THE USER CANNOT USE SPACE/ENTER/FORMATTING
   // const updateMessage = async () => {
@@ -440,7 +505,7 @@ const Chat: React.FC = () => {
       }
       setIsGenerating(false);
       return;
-    }
+    } // END OF SCRAPING PROCEDURE
   
     // Limit the history to the last 10 messages before sending
     const MAX_HISTORY = 20;
@@ -504,6 +569,39 @@ const Chat: React.FC = () => {
           return updated;
         });
       }
+      /*
+        let completeResponse = "";
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          completeResponse += chunk;
+
+          setMessages((prev) => {
+            const updated = [...prev];
+            const lastIndex = updated.length - 1;
+            if (lastIndex >= 0 && updated[lastIndex].role === "assistant") {
+              updated[lastIndex] = {
+                ...updated[lastIndex],
+                content: completeResponse,
+              };
+            }
+
+            // Auto-scroll logic inside setMessages
+            setTimeout(() => {
+              if (chatContainerRef.current) {
+                chatContainerRef.current.scrollTo({
+                  top: chatContainerRef.current.scrollHeight,
+                  behavior: "smooth",
+                });
+              }
+            }, 50);
+
+            return updated;
+          });
+        }
+      */
     } catch (error: any) {
       if (error.name === "AbortError") {
         setMessages((prev) => [
@@ -651,7 +749,7 @@ const Chat: React.FC = () => {
       {/* Greeting */}
       <Greeting />
       {/* Chat Messages */}
-      <div ref={chatContainerRef} className="flex-1 w-full overflow-y-auto min-h-0">
+      {/* <div ref={chatContainerRef} className="flex-1 w-full overflow-y-auto min-h-0">
         <ChatMessages
           messages={messages}
           editIndex={editIndex}
@@ -662,7 +760,22 @@ const Chat: React.FC = () => {
           // FIXED NOW THE USER CAN USE SPACE/ENTER/FORMATTING
           updateMessage={(newContent) => updateMessage(newContent)} // ✅ Now correctly passes a string argument
         />
-      </div>
+        <div ref={bottomRef} className="h-0" />
+      </div> */}
+      <div
+  ref={chatContainerRef}
+  className="flex-1 w-full overflow-y-auto min-h-0 max-h-[70vh] scroll-smooth"
+>
+  <ChatMessages
+    messages={messages}
+    editIndex={editIndex}
+    onEdit={editMessage}
+    input={input}
+    setInput={setInput}
+    updateMessage={(newContent) => updateMessage(newContent)}
+  />
+</div>
+
       {/* Chat Input */}
       <ChatInput
         input={input}
