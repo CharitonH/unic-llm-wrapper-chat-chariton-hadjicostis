@@ -629,15 +629,16 @@ const Chat: React.FC = () => {
 
 
   return (
-  // ORIGINAL CODE - CHAT IS IN MIDDLE
-  //<div className="w-full h-screen flex flex-col items-center justify-center bg-[#121212] text-white px-4">
-  //<div className="w-full max-w-4xl mx-auto bg-[#1a1a1a] p-6 rounded-lg shadow-lg border border-gray-700">
+  
 
   // 1) Outer container: min-h-screen on mobile, full h-screen on md+, flex layout
-    <div className="w-full min-h-screen md:h-screen md:min-h-0 md:h-auto flex flex-col bg-[#121212] text-white px-4 m-0 p-0">
+    // <div className="w-full min-h-screen md:h-screen md:min-h-0 md:h-auto flex flex-col bg-[#121212] text-white px-4 m-0 p-0">
+    // ORIGINAL CODE - CHAT IS IN MIDDLE
+    <div className="w-full h-screen flex flex-col items-center justify-center bg-[#121212] text-white px-4">
+      <div className="w-full max-w-4xl mx-auto bg-[#1a1a1a] p-6 rounded-lg shadow-lg border border-gray-700">
 
     {/* 2) Inner container: flex-1 to expand, plus h-full on md+ */}
-    <div className="w-full max-w-4xl mx-auto bg-[#1a1a1a] p-6 rounded-lg shadow-lg border border-gray-700 flex flex-col h-full flex-1 md:h-full">
+    {/* <div className="w-full max-w-4xl mx-auto bg-[#1a1a1a] p-6 rounded-lg shadow-lg border border-gray-700 flex flex-col h-full flex-1 md:h-full"> */}
       
       {/* // MODIFY CODE - CHAT IS FULL WIDTH */}
       {/* <div className="w-full h-screen flex flex-col items-center justify-center bg-[#121212] text-white px-4">
