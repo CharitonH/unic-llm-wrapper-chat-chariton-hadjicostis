@@ -26,6 +26,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
       <div className="relative">
         <ReactQuill
           theme="snow"
+          placeholder= "Ask anything"
           value={input}
           onChange={(content, delta, source, editor) =>
             setInput(editor.getHTML())
