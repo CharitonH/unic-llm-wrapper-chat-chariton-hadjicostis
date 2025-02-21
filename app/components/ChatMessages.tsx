@@ -77,6 +77,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
               <ReactQuill
                 // FIXED NOW THE USER CAN USE SPACE/ENTER/FORMATTING
                 theme="snow"
+                placeholder= "Ask anything"
                 value={editorContent}
                 preserveWhitespace={true} // Ensures spaces and newlines remain
                 onChange={(content, delta, source, editor) => {
