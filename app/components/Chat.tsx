@@ -56,80 +56,12 @@ const Chat: React.FC = () => {
     setEditIndex(index);
   };
 
-  // Auto-scroll to the latest message whenever messages update.
-  // useEffect(() => {
-  //   if (chatContainerRef.current) {
-  //     chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-  //   }
-  // }, [messages]);
-
-  // Scroll the chat down when a message is sent
-  // useEffect(() => {
-  //   // This will smoothly scroll to the bottom element whenever messages change.
-  //   bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  // }, [messages]);
-  // useEffect(() => {
-  //   if (chatContainerRef.current) {
-  //     chatContainerRef.current.scrollTo({
-  //       top: chatContainerRef.current.scrollHeight,
-  //       behavior: "smooth",
-  //     });
-  //   }
-  // }, [messages]);
-//   useEffect(() => {
-//   if (chatContainerRef.current) {
-//     chatContainerRef.current.scrollTo({
-//       top: chatContainerRef.current.scrollHeight,
-//       behavior: "smooth",
-//     });
-//   }
-// }, [messages]);
-// useEffect(() => {
-//   const chatContainer = chatContainerRef.current;
-//   if (!chatContainer) return;
-
-//   // Function to auto-scroll only if the user is at the bottom
-//   const scrollToBottom = () => {
-//     const isAtBottom =
-//       chatContainer.scrollHeight - chatContainer.scrollTop <= chatContainer.clientHeight + 10;
-
-//     if (isAtBottom) {
-//       chatContainer.scrollTo({
-//         top: chatContainer.scrollHeight,
-//         behavior: "smooth",
-//       });
-//     }
-//   };
-
-//   // Set up a MutationObserver to detect changes in chat content during streaming
-//   const observer = new MutationObserver(scrollToBottom);
-//   observer.observe(chatContainer, { childList: true, subtree: true });
-
-//   // Ensure we scroll when new messages arrive
-//   scrollToBottom();
-
-//   return () => observer.disconnect(); // Cleanup on unmount
-// }, [messages]);
+  // Auto-scroll to the latest message whenever messages update. // ORIGINAL
   useEffect(() => {
-    const chatContainer = chatContainerRef.current;
-    if (!chatContainer) return;
-
-    // Check if user is already at the bottom (prevents forced scrolling)
-    const isAtBottom =
-      chatContainer.scrollHeight - chatContainer.scrollTop <= chatContainer.clientHeight + 50;
-
-    if (isAtBottom) {
-      chatContainer.scrollTo({
-        top: chatContainer.scrollHeight,
-        behavior: "smooth",
-      });
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [messages]);
-
-
-
-
-
 
   // THE USER CANNOT USE SPACE/ENTER/FORMATTING
   // const updateMessage = async () => {
@@ -265,48 +197,47 @@ const Chat: React.FC = () => {
       let partialResult = "";
 
       // Stream the response chunk-by-chunk
-      let completeResponse = ""; // Store the full AI response
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        
-        const chunk = decoder.decode(value, { stream: true });
-        completeResponse += chunk; // Append chunk to the full response
-        
-        setMessages((prev) => {
-          const updated = [...prev];
-          const lastIndex = updated.length - 1;
-          if (lastIndex >= 0 && updated[lastIndex].role === "assistant") {
-            updated[lastIndex] = {
-              ...updated[lastIndex],
-              content: completeResponse, // Ensure full response is stored
-            };
-          }
-          return updated;
-        });
-      }
-      // Log to check if the full response was received
-      console.log("Final AI Response in updateMessage:", completeResponse);
-
-      
+      // let completeResponse = ""; // Store the full AI response
       // while (true) {
       //   const { value, done } = await reader.read();
       //   if (done) break;
-      //   partialResult += decoder.decode(value, { stream: true });
-
-      //   // Update the last assistant message with the partial text so far
+        
+      //   const chunk = decoder.decode(value, { stream: true });
+      //   completeResponse += chunk; // Append chunk to the full response
+        
       //   setMessages((prev) => {
       //     const updated = [...prev];
       //     const lastIndex = updated.length - 1;
       //     if (lastIndex >= 0 && updated[lastIndex].role === "assistant") {
       //       updated[lastIndex] = {
       //         ...updated[lastIndex],
-      //         content: partialResult,
+      //         content: completeResponse, // Ensure full response is stored
       //       };
       //     }
       //     return updated;
       //   });
       // }
+      // // Log to check if the full response was received
+      // console.log("Final AI Response in updateMessage:", completeResponse);
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        partialResult += decoder.decode(value, { stream: true });
+
+        // Update the last assistant message with the partial text so far
+        setMessages((prev) => {
+          const updated = [...prev];
+          const lastIndex = updated.length - 1;
+          if (lastIndex >= 0 && updated[lastIndex].role === "assistant") {
+            updated[lastIndex] = {
+              ...updated[lastIndex],
+              content: partialResult,
+            };
+          }
+          return updated;
+        });
+      }
     } catch (error) {
       console.error("Chat request failed:", error);
       let errorMessage = "An unknown error occurred.";
@@ -385,10 +316,6 @@ const Chat: React.FC = () => {
   
         // Create a placeholder assistant message for this scrape command.
         setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
-        /*setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: `🔍 Fetching data from ${urlToScrape}...` }, // Temporary placeholder
-        ]);*/
   
         try {
           const res = await fetch("/api/scrape/scrape", {
@@ -409,7 +336,7 @@ const Chat: React.FC = () => {
           let streamedContent = "";
   
           // Read the streamed response chunk by chunk.
-          let completeResponse = ""; // Store the full AI response
+          // let completeResponse = ""; // Store the full AI response
           // while (true) {
           //   const { value, done } = await reader.read();
           //   if (done) break;
@@ -569,39 +496,6 @@ const Chat: React.FC = () => {
           return updated;
         });
       }
-      /*
-        let completeResponse = "";
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-
-          const chunk = decoder.decode(value, { stream: true });
-          completeResponse += chunk;
-
-          setMessages((prev) => {
-            const updated = [...prev];
-            const lastIndex = updated.length - 1;
-            if (lastIndex >= 0 && updated[lastIndex].role === "assistant") {
-              updated[lastIndex] = {
-                ...updated[lastIndex],
-                content: completeResponse,
-              };
-            }
-
-            // Auto-scroll logic inside setMessages
-            setTimeout(() => {
-              if (chatContainerRef.current) {
-                chatContainerRef.current.scrollTo({
-                  top: chatContainerRef.current.scrollHeight,
-                  behavior: "smooth",
-                });
-              }
-            }, 50);
-
-            return updated;
-          });
-        }
-      */
     } catch (error: any) {
       if (error.name === "AbortError") {
         setMessages((prev) => [
@@ -637,100 +531,12 @@ const Chat: React.FC = () => {
     setIsCommandsOpen(false);
   };
 
-  // return (
-  //   // ORIGINAL CODE - CHAT IS IN MIDDLE
-  //    //<div className="w-full h-screen flex flex-col items-center justify-center bg-[#121212] text-white px-4">
-  //     //<div className="w-full max-w-4xl mx-auto bg-[#1a1a1a] p-6 rounded-lg shadow-lg border border-gray-700">
-
-  //     <div className="w-full h-auto md:h-screen flex flex-col bg-[#121212] text-white px-4">
-  //      <div className="w-full max-w-4xl mx-auto bg-[#1a1a1a] p-6 rounded-lg shadow-lg border border-gray-700 flex flex-col h-full">
-    
-  //   {/* // MODIFY CODE - CHAT IS FULL WIDTH */}
-  //   {/* <div className="w-full h-screen flex flex-col items-center justify-center bg-[#121212] text-white px-4">
-  //     <div className="w-full mx-auto bg-[#1a1a1a] p-6 rounded-lg shadow-lg border border-gray-700"> */}
-  //       {/* Logo */}
-  //       <div className="flex items-center justify-center gap-3 mb-2">
-  //         <Image src={UnicLogo} alt="UNIC Logo" width={350} height={50} />
-  //       </div>
-  //       {/* Chat Title */}
-  //       <div className="flex flex-col items-center justify-center text-center my-4">
-  //         <h2 className="text-2xl font-extrabold tracking-wide uppercase bg-gradient-to-r from-[#f1f1f1] via-[#f1f1f1] to-[#f1f1f1] text-transparent bg-clip-text">
-  //           LLM Wrapper Chat
-  //         </h2>
-  //       </div>
-  //       {/* Greeting */}
-  //       <Greeting />
-  //       {/* Chat Messages */}
-  //       <div ref={chatContainerRef} className="flex-1 w-full overflow-y-auto min-h-0">
-  //         <ChatMessages
-  //           messages={messages}
-  //           editIndex={editIndex}
-  //           onEdit={editMessage}
-  //           input={input}
-  //           setInput={setInput}
-  //           //updateMessage={updateMessage} // THE USER CANNOT USE SPACE/ENTER/FORMATTING
-  //           // FIXED NOW THE USER CAN USE SPACE/ENTER/FORMATTING
-  //           updateMessage={(newContent) => updateMessage(newContent)} // ✅ Now correctly passes a string argumen
-  //         />
-  //       </div>
-  //       {/* Chat Input */}
-  //       <ChatInput
-  //         input={input}
-  //         setInput={setInput}
-  //         isGenerating={isGenerating}
-  //         sendMessage={sendMessage}
-  //         stopGenerating={stopGenerating}
-  //       />
-  //       {/* Commands Modal */}
-  //       <CommandsModal
-  //         url={url}
-  //         setUrl={setUrl}
-  //         onScrape={handleScrapeCommand}
-  //         isCommandsOpen={isCommandsOpen}
-  //         setIsCommandsOpen={setIsCommandsOpen}
-  //         isAdvancedOpen={isAdvancedOpen}
-  //         setIsAdvancedOpen={setIsAdvancedOpen}
-  //         maxExecutionTime={maxExecutionTime}
-  //         setMaxExecutionTime={setMaxExecutionTime}
-  //         filter={filter}
-  //         setFilter={setFilter}
-  //         store={store}
-  //         setStore={setStore}
-  //       />
-  //       {/* Command Buttons with Icons */}
-  //       <div className="mt-4 flex flex-wrap gap-3 text-gray-400">
-  //         <button
-  //           className="flex items-center gap-2 p-2 bg-[#232323] rounded border border-gray-600 text-gray-300"
-  //           onClick={() => setIsCommandsOpen(true)}
-  //         >
-  //           <Terminal size={16} /> <span>Commands</span>
-  //         </button>
-  //         <button className="flex items-center gap-2 p-2 bg-[#232323] rounded border border-gray-600 text-gray-300">
-  //           <BookOpen size={16} /> <span>Prompts</span>
-  //         </button>
-  //         <button className="flex items-center gap-2 p-2 bg-[#232323] rounded border border-gray-600 text-gray-300">
-  //           <User size={16} /> <span>Personas</span>
-  //         </button>
-  //         <button className="flex items-center gap-2 p-2 bg-[#232323] rounded border border-gray-600 text-gray-300">
-  //           <Plus size={16} /> <span>Add</span>
-  //         </button>
-  //         <span className="ml-auto text-gray-500 flex items-center">
-  //           32/618 <FiCircle size={18} className="ml-1 text-gray-500" />
-  //         </span>
-  //       </div>
-  //     </div>
-  //   </div>
-  // );
-
   return (
   // 1) Outer container: min-h-screen on mobile, full h-screen on md+, flex layout
     // <div className="w-full min-h-screen md:h-screen md:min-h-0 md:h-auto flex flex-col bg-[#121212] text-white px-4 m-0 p-0">
     // ORIGINAL CODE - CHAT IS IN MIDDLE
     <div className="w-full min-h-screen md:h-screen h-screen flex flex-col items-center justify-center bg-[#121212] text-white px-4">
       <div className="w-full max-w-4xl mx-auto bg-[#1a1a1a] p-6 rounded-lg shadow-lg border border-gray-700">
-
-    {/* 2) Inner container: flex-1 to expand, plus h-full on md+ */}
-    {/* <div className="w-full max-w-4xl mx-auto bg-[#1a1a1a] p-6 rounded-lg shadow-lg border border-gray-700 flex flex-col h-full flex-1 md:h-full"> */}
       
       {/* // MODIFY CODE - CHAT IS FULL WIDTH */}
       {/* <div className="w-full h-screen flex flex-col items-center justify-center bg-[#121212] text-white px-4">
@@ -749,7 +555,7 @@ const Chat: React.FC = () => {
       {/* Greeting */}
       <Greeting />
       {/* Chat Messages */}
-      {/* <div ref={chatContainerRef} className="flex-1 w-full overflow-y-auto min-h-0">
+      <div ref={chatContainerRef} className="flex-1 w-full overflow-y-auto min-h-0">
         <ChatMessages
           messages={messages}
           editIndex={editIndex}
@@ -760,21 +566,7 @@ const Chat: React.FC = () => {
           // FIXED NOW THE USER CAN USE SPACE/ENTER/FORMATTING
           updateMessage={(newContent) => updateMessage(newContent)} // ✅ Now correctly passes a string argument
         />
-        <div ref={bottomRef} className="h-0" />
-      </div> */}
-      <div
-  ref={chatContainerRef}
-  className="flex-1 w-full overflow-y-auto min-h-0 max-h-[70vh] scroll-smooth"
->
-  <ChatMessages
-    messages={messages}
-    editIndex={editIndex}
-    onEdit={editMessage}
-    input={input}
-    setInput={setInput}
-    updateMessage={(newContent) => updateMessage(newContent)}
-  />
-</div>
+      </div>
 
       {/* Chat Input */}
       <ChatInput
