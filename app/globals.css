@@ -119,6 +119,15 @@ li#unic-user-profile {
   list-style-type: decimal !important;
 }
 
+/* Style the placeholder of the chat and editing message chat */
+.quill > .ql-container > .ql-editor.ql-blank::before{
+    font-size: 15px;
+    /*color: RGB(41, 44, 47);*/
+    color: rgba(249, 249, 249, 0.5);
+    font-weight: normal;
+    font-style: normal;
+}
+
 /* Mobile Styles */
 @media (max-width: 768px) {
   li#unic-user-profile {
